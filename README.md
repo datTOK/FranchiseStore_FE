@@ -1,2 +1,2 @@
-# SWP391---Team-3---FE
+# Franchise Store
 Central Kitchen and Franchise Store Management System

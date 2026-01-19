@@ -1,10 +1,8 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+// import '../../../components/login/Login.css'
 
-type LoginPageProps = {
-  onSignupClick: () => void
-}
-
-function LoginPage({ onSignupClick }: LoginPageProps) {
+function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -83,13 +81,12 @@ function LoginPage({ onSignupClick }: LoginPageProps) {
 
             <p className="pt-4 text-center text-xs text-gray-600">
               Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={onSignupClick}
+              <Link
+                to="/signup"
                 className="cursor-pointer font-semibold text-black hover:underline"
               >
                 Sign up
-              </button>
+              </Link>
             </p>
           </form>
         </div>

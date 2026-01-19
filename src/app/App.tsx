@@ -1,17 +1,17 @@
-import { useState } from 'react'
-import LoginPage from './login/LoginPage'
-import Signup from './login/signup'
-
-type Screen = 'login' | 'signup'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LoginPage from './auth/login/LoginPage'
+import Register from './auth/register/Register'
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('login')
-
-  if (screen === 'signup') {
-    return <Signup onLoginClick={() => setScreen('login')} />
-  }
-
-  return <LoginPage onSignupClick={() => setScreen('signup')} />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<Register />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
 
 export default App

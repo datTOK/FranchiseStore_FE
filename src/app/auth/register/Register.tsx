@@ -1,8 +1,7 @@
-type SignupProps = {
-  onLoginClick: () => void
-}
+import { Link } from 'react-router-dom'
+// import '../../../components/login/Login.css'
 
-function Signup({ onLoginClick }: SignupProps) {
+function Register() {
   return (
     <div className="flex min-h-screen flex-col bg-[#fff7f2] text-slate-900 md:flex-row">
       <div className="hidden h-52 w-full bg-[url('/login.png')] bg-cover bg-center md:block md:h-auto md:flex-[1.1]" />
@@ -96,13 +95,12 @@ function Signup({ onLoginClick }: SignupProps) {
 
             <p className="pt-4 text-center text-xs text-gray-600">
               Đã có tài khoản?{' '}
-              <button
-                type="button"
-                onClick={onLoginClick}
+              <Link
+                to="/login"
                 className="font-semibold text-black hover:underline"
               >
                 Đăng nhập
-              </button>
+              </Link>
             </p>
           </form>
         </div>
@@ -111,5 +109,4 @@ function Signup({ onLoginClick }: SignupProps) {
   )
 }
 
-export default Signup
-
+export default Register

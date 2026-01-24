@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+// import { Link } from 'react-router-dom'
 // import '../../../components/login/Login.css'
 
 function LoginPage() {
@@ -79,7 +79,7 @@ function LoginPage() {
               Login
             </button>
 
-            <p className="pt-4 text-center text-xs text-gray-600">
+            {/* <p className="pt-4 text-center text-xs text-gray-600">
               Don't have an account?{' '}
               <Link
                 to="/signup"
@@ -87,7 +87,7 @@ function LoginPage() {
               >
                 Sign up
               </Link>
-            </p>
+            </p> */}
           </form>
         </div>
       </div>

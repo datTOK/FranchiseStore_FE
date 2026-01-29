@@ -1,5 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './auth/login/LoginPage'
+import AdminLayout from './admin/AdminLayout'
+import Dashboard from './admin/Dashboard/Dashboard'
+import { Users } from 'lucide-react'
+import StaffDashboard from './staff/StaffDashboard/StaffDashboard'
+import StaffLayout from './staff/StaffLayout'
+import StaffInventory from './staff/StaffInventory/StaffInventory'
+import StaffOrder from './staff/StaffOrder/StaffOrder'
 // import Register from './auth/register/Register'
 
 function App() {

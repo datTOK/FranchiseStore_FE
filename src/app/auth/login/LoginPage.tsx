@@ -13,6 +13,20 @@ function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const handleRedirect = (role: string) => {
+    console.log('Handling redirect for role:', role)
+    const normalizedRole = role?.toString().toUpperCase().trim()
+
+    if (normalizedRole === 'ADMIN') {
+      navigate('/admin/dashboard')
+    } else if (normalizedRole === 'FR_STAFF') {
+      navigate('/staff/dashboard')
+    } else {
+      console.warn('Unknown or missing role, defaulting to staff dashboard:', role)
+      navigate('/staff/dashboard')
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -44,32 +58,12 @@ function LoginPage() {
           const userObj = userData.user || userData.data || userData
           const role = userObj.role || userData.role
 
-          console.log('Extracted role:', role)
-
-          const normalizedRole = role?.toString().toUpperCase().trim()
-          
-          if (normalizedRole === 'ADMIN') {
-            navigate('/admin/dashboard')
-          } else if (normalizedRole === 'STAFF') {
-            navigate('/staff/dashboard')
-          // } else {
-          //   console.warn('Unknown or missing role from /auth/me. Raw data:', userData)
-          //   alert(`Could not determine role. Detected: "${role}". Raw data: ${JSON.stringify(userData)}`)
-          //   navigate('/login') 
-          }
+          handleRedirect(role)
         } catch (meError) {
           console.error('Failed to fetch user info:', meError)
           
           const fallbackRole = data.role || data.user?.role
-          const normalizedFallbackRole = fallbackRole?.toString().toUpperCase().trim()
-          
-          if (normalizedFallbackRole === 'ADMIN') {
-             navigate('/admin/dashboard')
-          } else if (normalizedFallbackRole === 'STAFF') {
-             navigate('/staff/dashboard')
-          } else {
-             navigate('/staff/dashboard')
-          }
+          handleRedirect(fallbackRole)
         }
 
       } else {

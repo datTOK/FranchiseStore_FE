@@ -1,10 +1,12 @@
-import { ChefHat, CirclePile, LayoutDashboard, NotepadText } from 'lucide-react'
+import { ChefHat, CirclePile, LayoutDashboard, NotepadText, User } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const menu = [
     { label: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
     { label: 'Inventory', path: '/staff/inventory', icon: CirclePile },
     { label: 'Orders', path: '/staff/order', icon: NotepadText },
+    { label: "Profile", path: "/staff/profile", icon: User }
+
 ]
 
 export default function AdminSidebar() {

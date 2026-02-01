@@ -1,8 +1,8 @@
-import { Outlet } from 'react-router-dom'
-import StaffSidebar from '../../components/StaffSidebar'
-import StaffHeader from '../../components/StaffHeader'
+import { Outlet } from "react-router-dom";
+import StaffSidebar from "../../components/StaffSidebar";
+import StaffHeader from "../../components/StaffHeader";
 
-export default function AdminLayout() {
+export default function StaffLayout() {
   return (
     <div className="flex h-screen bg-gray-100">
       <StaffSidebar />
@@ -15,5 +15,5 @@ export default function AdminLayout() {
         </main>
       </div>
     </div>
-  )
+  );
 }

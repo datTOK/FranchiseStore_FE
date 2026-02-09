@@ -19,6 +19,7 @@ import ManagerReports from "./manager/ManagerReports/ManagerReports";
 import SupplyCordinatorLayout from "./supply_cordinator/SupplyCordinatorLayout";
 import SupplyCordinatorDashboard from "./supply_cordinator/SupplyCordinatorDashboard/SupplyCordinatorDasboard";
 import KitchenProduction from "./central_kitchen/KitchenProduction/KitchenProduction";
+import Category from "./admin/Category/Category";
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<Users />} />
+          <Route path="categories" element={<Category />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 

@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, ShieldUser } from "lucide-react";
+import { LayoutDashboard, Users, ShieldUser, Album } from "lucide-react";
 
 const menu = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Users", path: "/admin/users", icon: Users },
+  { label: "Categories", path: "/admin/categories", icon: Album },
 ];
 
 export default function AdminSidebar() {
@@ -19,7 +20,7 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      <nav className="mt-8 flex flex-col gap-1 px-3">
+      <nav className="mt-8 flex flex-col gap-8 px-3 py-2">
         {menu.map((item) => {
           const Icon = item.icon;
           return (

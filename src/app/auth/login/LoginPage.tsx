@@ -39,7 +39,7 @@ function LoginPage() {
       const data = response.data
       console.log('Login response:', data)
       
-      const token = data.accessToken || data.token
+      const token = data.accessToken || data.token || data.data?.token
 
       if (token) {
         localStorage.setItem('accessToken', token)

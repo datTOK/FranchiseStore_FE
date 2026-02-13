@@ -5,7 +5,6 @@ import LoginPage from "./auth/login/LoginPage";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/Dashboard/Dashboard";
 import Users from "./admin/Users/Users";
-
 import StaffLayout from "./staff/StaffLayout";
 import StaffDashboard from "./staff/StaffDashboard/StaffDashboard";
 import StaffInventory from "./staff/StaffInventory/StaffInventory";
@@ -20,10 +19,13 @@ import SupplyCordinatorLayout from "./supply_cordinator/SupplyCordinatorLayout";
 import SupplyCordinatorDashboard from "./supply_cordinator/SupplyCordinatorDashboard/SupplyCordinatorDasboard";
 import KitchenProduction from "./central_kitchen/KitchenProduction/KitchenProduction";
 import Category from "./admin/Category/Category";
+import { Toaster } from "react-hot-toast";
+import Store from "./admin/Store/Store";
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* AUTH */}
         <Route path="/login" element={<LoginPage />} />
@@ -33,6 +35,7 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<Users />} />
           <Route path="categories" element={<Category />} />
+          <Route path="stores" element={<Store />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 

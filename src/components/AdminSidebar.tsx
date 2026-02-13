@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, ShieldUser, Album } from "lucide-react";
+import { LayoutDashboard, Users, ShieldUser, Album, Store } from "lucide-react";
 
 const menu = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Users", path: "/admin/users", icon: Users },
   { label: "Categories", path: "/admin/categories", icon: Album },
+  { label: "Stores", path: "/admin/stores", icon: Store },
 ];
 
 export default function AdminSidebar() {

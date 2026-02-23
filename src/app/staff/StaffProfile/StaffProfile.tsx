@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react"
+import { Eye, EyeOff } from "lucide-react"
+import axiosClient from "../../../api/axiosClient"
+import { useNavigate } from "react-router-dom"
 
 type Role = "ADMIN" | "STAFF" | "CUSTOMER"
 
@@ -17,7 +20,6 @@ type UserProfile = {
   store?: Store | null
 }
 
-// Demo data (sau này nối API/localStorage)
 const mockUser: UserProfile = {
   id: "u01",
   name: "thai",
@@ -33,7 +35,7 @@ const mockUser: UserProfile = {
 
 const ROLE_PERMISSIONS: Record<Role, { label: string; desc?: string }[]> = {
   ADMIN: [
-    { label: "Quản lý người dùng", desc: "Thêm/sửa/xoá tài khoản" },
+    { label: "Quản lý người dùng" },
     { label: "Quản lý cửa hàng" },
     { label: "Quản lý sản phẩm" },
     { label: "Quản lý đơn hàng" },
@@ -53,21 +55,28 @@ const ROLE_PERMISSIONS: Record<Role, { label: string; desc?: string }[]> = {
 }
 
 export default function StaffProfile() {
+  const navigate = useNavigate()
   const [user] = useState<UserProfile>(mockUser)
 
-  const [currentPassword, setCurrentPassword] = useState("")
+  const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirm, setConfirm] = useState("")
-  const [msg, setMsg] = useState<string>("")
+
+  const [showOld, setShowOld] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState("")
 
   const canViewStore = user.role === "ADMIN" || user.role === "STAFF"
   const permissions = useMemo(() => ROLE_PERMISSIONS[user.role] ?? [], [user.role])
 
-  const onChangePassword = (e: React.FormEvent) => {
+  const onChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setMsg("")
 
-    if (!currentPassword || !newPassword || !confirm) {
+    if (!oldPassword || !newPassword || !confirm) {
       setMsg("Vui lòng nhập đầy đủ thông tin.")
       return
     }
@@ -80,22 +89,59 @@ export default function StaffProfile() {
       return
     }
 
-    // TODO: gọi API đổi mật khẩu thật ở đây
-    setMsg("✅ Đổi mật khẩu thành công (demo).")
-    setCurrentPassword("")
-    setNewPassword("")
-    setConfirm("")
+    setLoading(true)
+    try {
+      const token = localStorage.getItem("accessToken")
+      if (!token) {
+        setMsg("❌ Không có token. Bạn cần đăng nhập lại.")
+        setLoading(false)
+        return
+      }
+
+      const res = await axiosClient.post("/auth/change-password", {
+        oldPassword,
+        newPassword,
+      })
+
+      const serverMsg = res?.data?.message || "Password changed successfully"
+      setMsg("✅ " + serverMsg + ". Vui lòng đăng nhập lại.")
+
+      setOldPassword("")
+      setNewPassword("")
+      setConfirm("")
+
+      setTimeout(() => {
+        localStorage.removeItem("accessToken")
+        navigate("/login")
+      }, 1200)
+    } catch (err: any) {
+      const status = err?.response?.status
+      const data = err?.response?.data
+      const serverMsg =
+        data?.message ||
+        data?.error ||
+        err?.message ||
+        "Internal server error"
+
+      setMsg(`❌ (${status || "?"}) ${String(serverMsg)}`)
+
+      console.log("CHANGE_PASSWORD_ERROR_STATUS:", status)
+      console.log("CHANGE_PASSWORD_ERROR_DATA:", data)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="max-w-5xl">
       <div className="mb-5">
         <h2 className="text-2xl font-bold text-gray-900">Hồ sơ cá nhân</h2>
-        <p className="text-sm text-gray-500">Đổi mật khẩu • Cửa hàng • Quyền hạn (read-only)</p>
+        <p className="text-sm text-gray-500">
+          Đổi mật khẩu • Cửa hàng • Quyền hạn (read-only)
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* LEFT: Thông tin + quyền */}
         <div className="lg:col-span-1 space-y-6">
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <div className="flex items-center gap-4">
@@ -121,7 +167,6 @@ export default function StaffProfile() {
                 <span
                   key={idx}
                   className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"
-                  title={p.desc ?? ""}
                 >
                   {p.label}
                 </span>
@@ -133,15 +178,11 @@ export default function StaffProfile() {
           </div>
         </div>
 
-        {/* RIGHT: Cửa hàng + đổi mật khẩu */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Store */}
           <div className="rounded-xl border bg-white p-5 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="text-base font-semibold text-gray-900">Thông tin cửa hàng</div>
-                <div className="text-xs text-gray-500">Read-only theo role</div>
-              </div>
+            <div className="mb-3">
+              <div className="text-base font-semibold text-gray-900">Thông tin cửa hàng</div>
+              <div className="text-xs text-gray-500">Read-only theo role</div>
             </div>
 
             {!canViewStore ? (
@@ -174,7 +215,6 @@ export default function StaffProfile() {
             )}
           </div>
 
-          {/* Change password */}
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <div className="mb-3">
               <div className="text-base font-semibold text-gray-900">Đổi mật khẩu</div>
@@ -190,43 +230,71 @@ export default function StaffProfile() {
             <form onSubmit={onChangePassword} className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-gray-700">Mật khẩu hiện tại</label>
-                <input
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  type="password"
-                  className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    type={showOld ? "text" : "password"}
+                    className="w-full rounded-lg border px-3 py-2 pr-10 outline-none focus:ring-2 focus:ring-amber-300"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOld((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100"
+                  >
+                    {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Mật khẩu mới</label>
-                <input
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  type="password"
-                  className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
-                  placeholder="Tối thiểu 6 ký tự"
-                />
+                <div className="relative">
+                  <input
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    type={showNew ? "text" : "password"}
+                    className="w-full rounded-lg border px-3 py-2 pr-10 outline-none focus:ring-2 focus:ring-amber-300"
+                    placeholder="Tối thiểu 6 ký tự"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100"
+                  >
+                    {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
-                <input
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  type="password"
-                  className="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
-                  placeholder="Nhập lại mật khẩu"
-                />
+                <div className="relative">
+                  <input
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    type={showConfirm ? "text" : "password"}
+                    className="w-full rounded-lg border px-3 py-2 pr-10 outline-none focus:ring-2 focus:ring-amber-300"
+                    placeholder="Nhập lại mật khẩu"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-500 hover:bg-gray-100"
+                  >
+                    {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div className="md:col-span-2">
                 <button
                   type="submit"
-                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                  disabled={loading}
+                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
                 >
-                  Cập nhật mật khẩu
+                  {loading ? "Đang xử lý..." : "Cập nhật mật khẩu"}
                 </button>
               </div>
             </form>

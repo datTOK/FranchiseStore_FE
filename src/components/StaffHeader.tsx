@@ -1,55 +1,56 @@
 import { useNavigate } from 'react-router-dom'
 
-export default function AdminHeader() {
-    const navigate = useNavigate()
-    return (
-        <header className="flex h-14 items-center justify-between border-b bg-white px-6">
-            <h1 className="text-lg font-semibold">Franchise Store Staff</h1>
+export default function StaffHeader() {
+  const navigate = useNavigate()
 
-            <div className='relative group'>
-                <div className='flex items-center justify-center gap-3 cursor-pointer'>
-                    <img
-                        src="https://i.pravatar.cc/100"
-                        alt='Admin Avatar'
-                        className='w-10 h-10 rounded-full border-2 border-amber-500 cursor-pointer object-cover'
-                    />
-                    <span className='block text-sm font-medium text-gray-800'>Nguyen Van A</span>
-                </div>
+  return (
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between bg-zinc-100/80 px-6 backdrop-blur supports-[backdrop-filter]:bg-zinc-100/60">
+      <div className="flex items-baseline gap-3">
+        <h1 className="text-base font-semibold text-zinc-900">Franchise Store Staff</h1>
+        <span className="hidden text-xs font-medium text-zinc-500 sm:inline">Overview</span>
+      </div>
 
-                <div className='absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50'>
-                    <div className='px-4 py-3 border-b border-gray-100'>
-                        <span className='block text-sm font-semibold text-gray-800'>Staff</span>
-                        <span className='block text-sm text-gray-500 truncate'>staff2026@gmail.com</span>
-                    </div>
-                    <ul className='py-1'>
-                        <li>
-                            <button
-                                onClick={() => navigate('/staff/dashboard')}
-                                className='w-full cursor-pointer text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                            >
-                                Quản lý hệ thống
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                onClick={() => navigate('/staff/profile')}
-                                className='w-full cursor-pointer text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                            >
-                                Hồ sơ cá nhân
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                onClick={() => navigate('/login')}
-                                className='w-full cursor-pointer text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                            >
-                                Đăng xuất
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </header>
-    )
+      <div className="relative group">
+        <div className="flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-white/70">
+          <img
+            src="https://i.pravatar.cc/100"
+            alt="Staff Avatar"
+            className="h-9 w-9 rounded-full border-2 border-amber-300 object-cover"
+          />
+          <span className="hidden text-sm font-medium text-zinc-800 sm:block">Nguyen Van A</span>
+        </div>
+
+        <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-zinc-200 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+          <div className="px-4 py-3 border-b border-zinc-100">
+            <div className="text-sm font-semibold text-zinc-900">Staff</div>
+            <div className="text-xs text-zinc-500 truncate">staff2026@gmail.com</div>
+          </div>
+
+          <div className="p-2">
+            <button
+              type="button"
+              onClick={() => navigate('/staff/dashboard')}
+              className="w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
+            >
+              Quản lý hệ thống
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/staff/profile')}
+              className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
+            >
+              Hồ sơ cá nhân
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
+            >
+              Đăng xuất
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
 }
-

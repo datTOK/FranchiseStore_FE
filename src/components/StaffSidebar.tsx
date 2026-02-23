@@ -1,52 +1,61 @@
-import { ChefHat, CirclePile, LayoutDashboard, NotepadText, User } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
 
 const menu = [
-    { label: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
-    { label: 'Inventory', path: '/staff/inventory', icon: CirclePile },
-    { label: 'Orders', path: '/staff/order', icon: NotepadText },
-    { label: "Profile", path: "/staff/profile", icon: User }
-
+  { label: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
+  { label: 'Inventory', path: '/staff/inventory', icon: CirclePile },
+  { label: 'Orders', path: '/staff/order', icon: NotepadText },
+  { label: 'Profile', path: '/staff/profile', icon: User },
 ]
 
-export default function AdminSidebar() {
-    return (
-        <aside className="w-70 bg-amber-600 text-gray-200">
-            <div className='flex items-center justify-center pt-4'>
-                <div>
-                    <ChefHat className='w-12 h-12' />
-                </div>
-                <div className='flex flex-col '>
-                    <div className="px-2 text-md font-bold text-white">
-                        Franchise Store
-                    </div>
-                    <div className="px-2 text-sm font-semibold text-white">
-                        Franchise Portal
-                    </div>
-                </div>
-            </div>
+export default function StaffSidebar() {
+  const navigate = useNavigate()
 
-            <nav className="mt-8 flex flex-col gap-1 px-3">
-                {menu.map(item => {
-                    const Icon = item.icon
-                    return (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 rounded-lg px-4 py-6 text-sm transition
-                ${isActive
-                                    ? 'bg-amber-900 text-white'
-                                    : 'text-gray-300 hover:bg-amber-800 hover:text-white'}`
-                            }
-                        >
-                            <Icon className="h-5 w-5" />
-                            <span>{item.label}</span>
-                        </NavLink>
-                    )
-                })}
-            </nav>
-        </aside>
-    )
+  return (
+    <aside className="flex w-[260px] flex-col bg-zinc-900 text-zinc-200">
+      <div className="flex items-center gap-3 px-6 pt-6">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-800">
+          <ChefHat className="h-6 w-6 text-amber-300" />
+        </div>
+        <div className="leading-tight">
+          <div className="text-sm font-semibold text-white">Franchise Store</div>
+          <div className="text-xs font-medium text-zinc-400">Franchise Portal</div>
+        </div>
+      </div>
+
+      <nav className="mt-8 flex flex-1 flex-col gap-2 px-4">
+        {menu.map((item) => {
+          const Icon = item.icon
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                [
+                  'group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition',
+                  isActive
+                    ? 'bg-zinc-800 text-white'
+                    : 'text-zinc-300 hover:bg-zinc-800/70 hover:text-white',
+                ].join(' ')
+              }
+            >
+              <Icon className="h-5 w-5 text-zinc-400 transition group-hover:text-amber-300" />
+              <span>{item.label}</span>
+            </NavLink>
+          )
+        })}
+      </nav>
+
+      <div className="border-t border-zinc-800 p-4">
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800/70 hover:text-white"
+        >
+          <LogOut className="h-5 w-5 text-zinc-400" />
+          <span>Log out</span>
+        </button>
+      </div>
+    </aside>
+  )
 }
-

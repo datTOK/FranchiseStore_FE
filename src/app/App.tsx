@@ -41,12 +41,18 @@ export default function App() {
 
         { }
         <Route path="/staff" element={<StaffLayout />}>
-          <Route path="dashboard" element={<StaffDashboard />} />
-          <Route path="inventory" element={<StaffInventory />} />
-          <Route path="order" element={<StaffOrder />} />
-          <Route path="profile" element={<StaffProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+  <Route path="dashboard" element={<StaffDashboard />} />
+  <Route path="inventory" element={<StaffInventory />} />
+
+  <Route path="orders" element={<StaffOrder />} />
+ 
+
+  {/* backward compatible */}
+  <Route path="order" element={<Navigate to="/staff/orders" replace />} />
+
+  <Route path="profile" element={<StaffProfile />} />
+  <Route index element={<Navigate to="dashboard" replace />} />
+</Route>
 
         <Route path="/central-kitchen" element={<CentralKitchenLayout />}>
           <Route path="dashboard" element={<KitchenDashboard />} />

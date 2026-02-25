@@ -34,6 +34,19 @@ type Props = {
   rawMaterialCount: number;
 };
 
+function getTypeLabel(type: string) {
+  switch (type) {
+    case "FINISHED":
+      return "Finished Product";
+    case "RAW_MATERIAL":
+      return "Raw Material";
+    case "SEMI_FINISHED":
+      return "Semi-Finished Product";
+    default:
+      return type;
+  }
+}
+
 export default function StaffInventoryTable(props: Props) {
   const {
     inventory,
@@ -89,13 +102,13 @@ export default function StaffInventoryTable(props: Props) {
               padding: "0 12px",
               borderRadius: 10,
               border: "1px solid #ddd",
-              minWidth: 140,
+              minWidth: 180,
             }}
           >
             <option value="All">All Types</option>
-            <option value="RAW_MATERIAL">RAW_MATERIAL</option>
-            <option value="SEMI_FINISHED">SEMI_FINISHED</option>
-            <option value="FINISHED">FINISHED</option>
+            <option value="RAW_MATERIAL">Raw Material</option>
+            <option value="SEMI_FINISHED">Semi-Finished Product</option>
+            <option value="FINISHED">Finished Product</option>
           </select>
         </div>
 
@@ -121,7 +134,7 @@ export default function StaffInventoryTable(props: Props) {
                       <div style={{ fontWeight: 600 }}>{x.name}</div>
                       <div style={{ fontSize: 12, opacity: 0.7 }}>{x.sku}</div>
                     </Td>
-                    <Td>{x.type}</Td>
+                    <Td>{getTypeLabel(x.type)}</Td>
                     <Td>{x.category_name}</Td>
                     <Td>{x.qty}</Td>
                     <Td>

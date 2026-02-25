@@ -26,11 +26,17 @@ const MOCK_LOGS: InventoryLog[] = [
 ];
 
 function mapProductToInventory(p: ProductItem): InventoryItem {
+  const typeMap: Record<string, string> = {
+    FINISHED: "Finished Product",
+    RAW_MATERIAL: "Raw Material",
+    SEMI_FINISHED: "Semi-Finished Product",
+  };
+
   return {
     id: p.id,
     sku: p.sku,
     name: p.name,
-    type: p.product_type,
+    type: typeMap[p.product_type] || p.product_type,
     category_name: p.category_name,
     qty: 0,
     status: p.is_active === 1 ? "Active" : "Inactive",
@@ -50,8 +56,12 @@ export default function StaffInventory() {
       setLoading(true);
       setError("");
       try {
-        const res = await inventoryApi.getAll();
-        const products = res.data?.data || [];
+        const res: any = await inventoryApi.getAll();
+
+       
+        const products: ProductItem[] =
+          Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
+
         setInventory(products.map(mapProductToInventory));
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || "Load products failed");

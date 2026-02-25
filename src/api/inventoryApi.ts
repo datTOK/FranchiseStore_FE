@@ -20,10 +20,16 @@ export interface ProductItem {
 
 export interface ProductListResponse {
   data: ProductItem[];
+  message?: string;
+}
+
+export async function getProducts() {
+  const res = await axiosClient.get<ProductListResponse>("/products");
+  return res.data;
 }
 
 const inventoryApi = {
-  getAll: () => axiosClient.get<ProductListResponse>("/products"),
+  getAll: getProducts,
 };
 
 export default inventoryApi;

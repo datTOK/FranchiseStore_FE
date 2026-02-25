@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 const menu = [
   { label: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
   { label: 'Inventory', path: '/staff/inventory', icon: CirclePile },
-  { label: 'Orders', path: '/staff/order', icon: NotepadText },
+  { label: 'Orders', path: '/staff/orders', icon: NotepadText },
   { label: 'Profile', path: '/staff/profile', icon: User },
 ]
 

@@ -92,101 +92,162 @@ export default function StorePage() {
   if (loading) return <p className="p-6">Loading stores...</p>
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-semibold">Stores</h1>
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">
+            Store Management
+          </h2>
+          <p className="text-gray-500 mt-1">
+            Manage and organize system stores
+          </p>
+        </div>
 
         <button
           onClick={handleOpenCreate}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:opacity-90 transition shadow-sm"
         >
           + Create Store
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
-        <table className="min-w-full text-sm text-left">
-          <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-            <tr>
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Address</th>
-              <th className="px-4 py-3 text-center">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {stores.map((store) => (
-              <tr key={store.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3">{store.id}</td>
-                <td className="px-4 py-3 font-semibold">{store.type}</td>
-                <td className="px-4 py-3">{store.name}</td>
-                <td className="px-4 py-3">{store.address}</td>
-
-                <td className="px-4 py-3 text-center space-x-2">
-                  <button
-                    onClick={() => handleOpenEdit(store)}
-                    className="px-3 py-1 text-xs rounded-lg bg-yellow-500 text-white"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(store.id)}
-                    className="px-3 py-1 text-xs rounded-lg bg-red-600 text-white"
-                  >
-                    Delete
-                  </button>
-                </td>
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        {stores.length === 0 ? (
+          <div className="p-12 text-center">
+            <p className="text-gray-400 text-sm">
+              No stores found.
+            </p>
+          </div>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+              <tr>
+                <th className="px-6 py-4 text-left">Store</th>
+                <th className="px-6 py-4 text-left">Address</th>
+                <th className="px-6 py-4 text-center">Type</th>
+                <th className="px-6 py-4 text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {stores.map((store) => (
+                <tr
+                  key={store.id}
+                  className="border-t hover:bg-gray-50 transition"
+                >
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-gray-800">
+                      {store.name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      ID: {store.id}
+                    </p>
+                  </td>
+
+                  <td className="px-6 py-4 text-gray-600">
+                    {store.address}
+                  </td>
+
+                  <td className="px-6 py-4 text-center">
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full ${store.type === "FR"
+                          ? "bg-blue-100 text-blue-600"
+                          : store.type === "SC"
+                            ? "bg-purple-100 text-purple-600"
+                            : "bg-green-100 text-green-600"
+                        }`}
+                    >
+                      {store.type === "FR"
+                        ? "Franchise"
+                        : store.type === "SC"
+                          ? "Supply"
+                          : "Central Kitchen"}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => handleOpenEdit(store)}
+                        className="px-4 py-1.5 text-xs font-medium rounded-lg border hover:bg-gray-100 transition"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(store.id)}
+                        className="px-4 py-1.5 text-xs font-medium rounded-lg bg-black text-white hover:opacity-80 transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-8">
+            <h2 className="text-xl font-semibold mb-6 text-gray-800">
               {editingId ? "Update Store" : "Create Store"}
             </h2>
 
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as Store["type"])}
-              className="w-full border rounded-lg px-3 py-2 mb-3"
-            >
-              <option value="FR">Franchise Store</option>
-              <option value="SC">Supply Coordinator</option>
-              <option value="CK">Central Kitchen</option>
-            </select>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-500 mb-1">
+                Store Type
+              </label>
+              <select
+                value={type}
+                onChange={(e) =>
+                  setType(e.target.value as Store["type"])
+                }
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              >
+                <option value="FR">Franchise Store</option>
+                <option value="SC">Supply Coordinator</option>
+                <option value="CK">Central Kitchen</option>
+              </select>
+            </div>
 
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Store name"
-              className="w-full border rounded-lg px-3 py-2 mb-3"
-            />
+            <div className="mb-4">
+              <label className="block text-sm text-gray-500 mb-1">
+                Store Name
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter store name"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              />
+            </div>
 
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Address"
-              className="w-full border rounded-lg px-3 py-2 mb-4"
-            />
+            <div className="mb-6">
+              <label className="block text-sm text-gray-500 mb-1">
+                Address
+              </label>
+              <input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Enter address"
+                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black text-sm"
+              />
+            </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 rounded-lg border"
+                className="px-5 py-2 rounded-lg border hover:bg-gray-100 transition text-sm"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+                className="px-5 py-2 rounded-lg bg-black text-white hover:opacity-90 transition text-sm"
               >
                 {editingId ? "Update" : "Create"}
               </button>

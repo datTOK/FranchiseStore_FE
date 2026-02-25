@@ -1,8 +1,11 @@
-import type { UsersListResponse } from '../types/users.type';
+import type { CreateUserPayload, CreateUserResponse, GetUsersParams, UsersListResponse } from '../types/users.type';
 import axiosClient from './axiosClient';
 
 export const userApi = {
-  getAllUsers: () => {
-    return axiosClient.get<UsersListResponse>('/users');
+  getAllUsers: (params?: GetUsersParams) => {
+    return axiosClient.get<UsersListResponse>('/users', { params });
+  },
+  createUser: (data: CreateUserPayload) => {
+    return axiosClient.post<CreateUserResponse>('/users', data);
   },
 };

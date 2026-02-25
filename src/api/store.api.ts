@@ -12,7 +12,7 @@ export const storeApi = {
   },
 
   updateStore: (id: number, body: Partial<Store>) => {
-    return axiosClient.put(`/stores/${id}`, body)
+    return axiosClient.patch(`/stores/${id}`, body)
   },
 
   deleteStore: (id: number) => {

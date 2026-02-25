@@ -12,7 +12,7 @@ export const categoryApi = {
     id: number,
     body: Pick<Category, 'name' | 'description'>
   ) => {
-    return axiosClient.put(`/categories/${id}`, body)
+    return axiosClient.patch(`/categories/${id}`, body)
   },
 
   deleteCategory: (id: number) => {

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, CheckCircle2, Truck, Hourglass, Plus, RefreshCw } from "lucide-react";
+import { ClipboardList, CheckCircle2, Truck, Hourglass, RefreshCw, Eye } from "lucide-react";
 import Card from "../../../components/Card";
-import orderApi, { type CreateOrderPayload, type OrderRow, type OrderStatus } from "../../../api/orderApi";
-import inventoryApi, { type ProductItem } from "../../../api/inventoryApi";
+import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
 
 type OrderItemRow = {
@@ -66,16 +65,9 @@ export default function StaffOrder() {
   const [error, setError] = useState("");
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [products, setProducts] = useState<ProductItem[]>([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
-
-  const [openCreate, setOpenCreate] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [items, setItems] = useState<Array<{ product_id: number; quantity: number; unit_price: number }>>([
-    { product_id: 0, quantity: 1, unit_price: 0 },
-  ]);
 
   // Detail modal
   const [openDetail, setOpenDetail] = useState(false);
@@ -83,20 +75,17 @@ export default function StaffOrder() {
   const [detailError, setDetailError] = useState("");
   const [detail, setDetail] = useState<OrderDetail | null>(null);
 
-  
   const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>({});
 
   const fetchAll = async () => {
     setError("");
     setLoading(true);
     try {
-      const [o, p] = await Promise.all([orderApi.getAll(), inventoryApi.getAll()]);
+      const o = await orderApi.getAll();
       setOrders(Array.isArray(o?.data) ? o.data : []);
-      setProducts(Array.isArray(p?.data) ? p.data : []);
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || "Load orders failed");
       setOrders([]);
-      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -104,6 +93,7 @@ export default function StaffOrder() {
 
   useEffect(() => {
     fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {
@@ -133,51 +123,10 @@ export default function StaffOrder() {
     }
   };
 
-  const addItemRow = () => {
-    setItems((prev) => [...prev, { product_id: 0, quantity: 1, unit_price: 0 }]);
-  };
-
-  const updateItem = (
-    idx: number,
-    patch: Partial<{ product_id: number; quantity: number; unit_price: number }>
-  ) => {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-  };
-
-  const submitCreate = async () => {
-    const payload: CreateOrderPayload = {
-      delivery_date: deliveryDate,
-      items: items
-        .filter((x) => Number(x.product_id) > 0 && Number(x.quantity) > 0 && Number(x.unit_price) > 0)
-        .map((x) => ({
-          product_id: Number(x.product_id),
-          quantity: Number(x.quantity),
-          unit_price: Number(x.unit_price),
-        })),
-    };
-
-    if (!payload.delivery_date) {
-      setError("Please choose delivery_date");
-      return;
-    }
-    if (payload.items.length === 0) {
-      setError("Please select at least 1 item with quantity > 0 and unit_price > 0");
-      return;
-    }
-
-    await onAction(async () => {
-      await orderApi.create(payload);
-      setOpenCreate(false);
-      setDeliveryDate("");
-      setItems([{ product_id: 0, quantity: 1, unit_price: 0 }]);
-    });
-  };
-
   const openOrderDetail = async (orderId: number) => {
     setOpenDetail(true);
     setDetailError("");
 
-    
     const cached = detailCache[orderId];
     if (cached) {
       setDetail(cached);
@@ -256,14 +205,6 @@ export default function StaffOrder() {
 
           <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <button
-              onClick={() => setOpenCreate(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600"
-            >
-              <Plus className="w-4 h-4" />
-              Create Order
-            </button>
-
-            <button
               onClick={fetchAll}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50"
             >
@@ -316,7 +257,6 @@ export default function StaffOrder() {
             <tbody>
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t">
-                  {/* ID & Order  */}
                   <td className="px-4 py-3">{o.id}</td>
                   <td className="px-4 py-3 font-medium">{o.order_code}</td>
 
@@ -326,9 +266,6 @@ export default function StaffOrder() {
                   <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
                   <td className="px-4 py-3">{normStatus(o.status)}</td>
 
-                  
-
-                  {/* Actions */}
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -371,15 +308,15 @@ export default function StaffOrder() {
                       </button>
                     </div>
                   </td>
-                  {/* View */}
+
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => openOrderDetail(o.id)}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-                    >
-                      View
-                    </button>
-                  </td>
+  <button
+    onClick={() => openOrderDetail(o.id)}
+    className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+  >
+    <Eye className="w-4 h-4 text-gray-600 hover:text-orange-500" />
+  </button>
+</td>
                 </tr>
               ))}
 
@@ -394,110 +331,6 @@ export default function StaffOrder() {
           </table>
         </div>
       </div>
-
-      {/* CREATE MODAL */}
-      {openCreate ? (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b flex items-center justify-between">
-              <div className="font-semibold text-lg">Create Order</div>
-              <button
-                onClick={() => setOpenCreate(false)}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <div>
-                <div className="text-sm font-medium mb-1">Delivery date</div>
-                <input
-                  type="date"
-                  value={deliveryDate}
-                  onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="text-sm font-medium">Items</div>
-
-                {items.map((it, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-                    <div className="md:col-span-6">
-                      <div className="text-xs text-gray-600 mb-1">Product</div>
-                      <select
-                        value={it.product_id}
-                        onChange={(e) => updateItem(idx, { product_id: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
-                      >
-                        <option value={0}>Select product</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.id} - {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="md:col-span-3">
-                      <div className="text-xs text-gray-600 mb-1">Quantity</div>
-                      <input
-                        type="number"
-                        min={1}
-                        value={it.quantity}
-                        onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
-                        placeholder="Qty"
-                      />
-                    </div>
-
-                    <div className="md:col-span-3">
-                      <div className="text-xs text-gray-600 mb-1">Unit price</div>
-                      <input
-                        type="number"
-                        min={0}
-                        value={it.unit_price}
-                        onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
-                        placeholder="Price"
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={addItemRow}
-                    className="px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50"
-                  >
-                    + Add item
-                  </button>
-                </div>
-              </div>
-
-              {error ? <div className="text-red-600">{error}</div> : null}
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  onClick={() => setOpenCreate(false)}
-                  className="px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={submitCreate}
-                  disabled={loading}
-                  className="px-4 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-60"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {/* DETAIL MODAL */}
       {openDetail ? (

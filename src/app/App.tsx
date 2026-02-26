@@ -5,11 +5,19 @@ import LoginPage from "./auth/login/LoginPage";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/Dashboard/Dashboard";
 import Users from "./admin/Users/Users";
-import StaffLayout from "./staff/StaffLayout";
-import StaffDashboard from "./staff/StaffDashboard/StaffDashboard";
-import StaffInventory from "./staff/StaffInventory/StaffInventory";
-import StaffOrder from "./staff/StaffOrder/StaffOrder";
-import StaffProfile from "./staff/StaffProfile/StaffProfile";
+// CK Staff (Central Kitchen Staff)
+import CKStaffLayout from "./staff/CKStaffLayout";
+import CKStaffDashboard from "./staff/CKStaffDashboard/CKStaffDashboard";
+import CKStaffInventory from "./staff/CKStaffInventory/CKStaffInventory";
+import CKStaffOrder from "./staff/CKStaffOrder/CKStaffOrder";
+import CKStaffProfile from "./staff/CKStaffProfile/CKStaffProfile";
+
+// FR Staff (Franchise Store Staff)
+import FRStaffLayout from "./fr_staff/FRStaffLayout";
+import FRStaffDashboard from "./fr_staff/FRStaffDashboard/FRStaffDashboard";
+import FRStaffInventory from "./fr_staff/FRStaffInventory/FRStaffInventory";
+import FRStaffOrder from "./fr_staff/FRStaffOrder/FRStaffOrder";
+import FRStaffProfile from "./fr_staff/FRStaffProfile/FRStaffProfile";
 import CentralKitchenLayout from "./central_kitchen/CentralKitchenLayout";
 import KitchenDashboard from "./central_kitchen/KitchenDashboard/KitchenDashboard";
 import ManagerDashboard from "./manager/ManagerDashboard/ManagerDashboard";
@@ -39,42 +47,49 @@ export default function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
-        { }
-        <Route path="/staff" element={<StaffLayout />}>
-  <Route path="dashboard" element={<StaffDashboard />} />
-  <Route path="inventory" element={<StaffInventory />} />
+        {/* CK STAFF */}
+        <Route path="/ck-staff" element={<CKStaffLayout />}>
+          <Route path="dashboard" element={<CKStaffDashboard />} />
+          <Route path="inventory" element={<CKStaffInventory />} />
+          <Route path="orders" element={<CKStaffOrder />} />
+          <Route path="profile" element={<CKStaffProfile />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+        </Route>
 
-  <Route path="orders" element={<StaffOrder />} />
- 
+        {/* FR STAFF */}
+        <Route path="/fr-staff" element={<FRStaffLayout />}>
+          <Route path="dashboard" element={<FRStaffDashboard />} />
+          <Route path="inventory" element={<FRStaffInventory />} />
+          <Route path="orders" element={<FRStaffOrder />} />
+          <Route path="profile" element={<FRStaffProfile />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+        </Route>
 
-  {/* backward compatible */}
-  <Route path="order" element={<Navigate to="/staff/orders" replace />} />
-
-  <Route path="profile" element={<StaffProfile />} />
-  <Route index element={<Navigate to="dashboard" replace />} />
-</Route>
+        {/* backward compatible (old staff paths) */}
+        <Route path="/staff" element={<Navigate to="/ck-staff" replace />} />
+        <Route path="/staff/*" element={<Navigate to="/ck-staff" replace />} />
 
         <Route path="/central-kitchen" element={<CentralKitchenLayout />}>
           <Route path="dashboard" element={<KitchenDashboard />} />
-          <Route path="inventory" element={<StaffInventory />} />
+          <Route path="inventory" element={<CKStaffInventory />} />
           <Route path="production" element={<KitchenProduction />} />
-          <Route path="profile" element={<StaffProfile />} />
+          <Route path="profile" element={<CKStaffProfile />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
         <Route path="/manager" element={<ManagerLayout />}>
           <Route path="dashboard" element={<ManagerDashboard />} />
-          <Route path="inventory" element={<StaffInventory />} />
+          <Route path="inventory" element={<CKStaffInventory />} />
           <Route path="report" element={<ManagerReports />} />
-          <Route path="profile" element={<StaffProfile />} />
+          <Route path="profile" element={<CKStaffProfile />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
         <Route path="/supply-cordinator" element={<SupplyCordinatorLayout />}>
           <Route path="dashboard" element={<SupplyCordinatorDashboard />} />
-          <Route path="inventory" element={<StaffInventory />} />
+          <Route path="inventory" element={<CKStaffInventory />} />
           <Route path="report" element={<ManagerReports />} />
-          <Route path="profile" element={<StaffProfile />} />
+          <Route path="profile" element={<CKStaffProfile />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 

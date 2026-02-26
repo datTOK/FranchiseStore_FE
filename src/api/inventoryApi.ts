@@ -2,34 +2,46 @@ import axiosClient from "./axiosClient";
 
 export type ProductType = "RAW_MATERIAL" | "SEMI_FINISHED" | "FINISHED";
 
-export interface ProductItem {
+// GET /inventory
+export interface InventoryItemApi {
   id: number;
-  category_id: number;
-  category_name: string;
+  store_id: number;
+  product_id: number;
   name: string;
   sku: string;
-  image_url: string | null;
   uom: string;
   product_type: ProductType;
-  is_active: number;
-  created_at: string;
+  category_id: number;
+  quantity: number | string;
+  reserved_quantity: number | string;
+  available_quantity: number | string;
   updated_at: string;
-  created_by: any;
-  updated_by: any;
 }
 
-export interface ProductListResponse {
-  data: ProductItem[];
+export interface InventoryListResponse {
+  data: InventoryItemApi[];
   message?: string;
 }
 
-export async function getProducts() {
-  const res = await axiosClient.get<ProductListResponse>("/products");
+export async function getInventory() {
+  const res = await axiosClient.get<InventoryListResponse>("/inventory");
+  return res.data;
+}
+
+export async function getInventorySummary() {
+  const res = await axiosClient.get("/inventory/summary");
+  return res.data;
+}
+
+export async function getInventoryItem(productId: number) {
+  const res = await axiosClient.get(`/inventory/${productId}`);
   return res.data;
 }
 
 const inventoryApi = {
-  getAll: getProducts,
+  getAll: getInventory,
+  getSummary: getInventorySummary,
+  getOne: getInventoryItem,
 };
 
 export default inventoryApi;

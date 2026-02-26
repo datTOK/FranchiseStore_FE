@@ -18,10 +18,14 @@ function LoginPage() {
     if (normalizedRole === 'ADMIN') {
       navigate('/admin/dashboard')
     } else if (normalizedRole === 'FR_STAFF') {
-      navigate('/staff/dashboard')
+      navigate('/fr-staff/dashboard')
+    } else if (normalizedRole === 'CK_STAFF') {
+      navigate('/ck-staff/dashboard')
+    } else if (normalizedRole === 'MANAGER') {
+      navigate('/manager/dashboard')
     } else {
       console.warn('Unknown or missing role, defaulting to staff dashboard:', role)
-      navigate('/staff/dashboard')
+      navigate('/ck-staff/dashboard')
     }
   }
 
@@ -38,17 +42,17 @@ function LoginPage() {
 
       const data = response.data
       console.log('Login response:', data)
-      
+
       const token = data.accessToken || data.token || data.data?.token
 
       if (token) {
         localStorage.setItem('accessToken', token)
-        
+
         try {
           const meResponse = await axiosClient.get('/auth/me')
           const userData = meResponse.data
           console.log('User info (/auth/me):', userData)
-          
+
           if (userData) {
             localStorage.setItem('user', JSON.stringify(userData))
           }
@@ -59,7 +63,7 @@ function LoginPage() {
           handleRedirect(role)
         } catch (meError) {
           console.error('Failed to fetch user info:', meError)
-          
+
           const fallbackRole = data.role || data.user?.role
           handleRedirect(fallbackRole)
         }

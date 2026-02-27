@@ -1,24 +1,50 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import CKStaffSidebar from "../../components/CKStaffSidebar";
 import CKStaffHeader from "../../components/CKStaffHeader";
 import bg from "../../assets/staff-bg.jpg";
 
 export default function CKStaffLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        navigate("/login", { replace: true });
+      }
+    };
+
+    // Check ngay khi vào layout & mỗi lần đổi route
+    checkAuth();
+
+    // Logout/Login ở tab khác -> localStorage đổi -> tự đá về login
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "accessToken" || e.key === "logoutAt") {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [location.pathname, navigate]);
+
   return (
     <div className="min-h-screen w-full bg-zinc-100">
       {/* Sidebar fixed */}
-      <div className="fixed left-0 top-0 h-screen w-[260px] z-40">
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-40">
         <CKStaffSidebar />
       </div>
 
       {/* Content area (chừa chỗ sidebar) */}
-      <div className="ml-[260px] min-h-screen relative">
+      <div className="ml-0 md:ml-[260px] min-h-screen relative">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10"
           style={{ backgroundImage: `url(${bg})` }}
         />
 
-        <div className="relative z-10 flex min-h-screen flex-col">
+        <div className="relative flex min-h-screen flex-col">
           {/* Header cố định trên top */}
           <div className="sticky top-0 z-30">
             <CKStaffHeader />

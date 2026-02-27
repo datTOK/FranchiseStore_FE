@@ -30,6 +30,9 @@ import KitchenProduction from "./central_kitchen/KitchenProduction/KitchenProduc
 import Category from "./admin/Category/Category";
 import { Toaster } from "react-hot-toast";
 import Store from "./admin/Store/Store";
+import ManagerCategory from "./manager/ManagerCategory/ManagerCategory";
+import ManagerProducts from "./manager/ManagerProducts/ManagerProducts";
+import ManagerProfile from "./manager/ManagerProfile/ManagerProfile";
 
 export default function App() {
   return (
@@ -82,9 +85,9 @@ export default function App() {
 
     <Route path="/manager" element={<ManagerLayout />}>
       <Route path="dashboard" element={<ManagerDashboard />} />
-      <Route path="inventory" element={<CKStaffInventory />} />
-      <Route path="report" element={<ManagerReports />} />
-      <Route path="profile" element={<CKStaffProfile />} />
+      <Route path="category" element={<ManagerCategory />} />
+      <Route path="products" element={<ManagerProducts />} />
+      <Route path="profile" element={<ManagerProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
 

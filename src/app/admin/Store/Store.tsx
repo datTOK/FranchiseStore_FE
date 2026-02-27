@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { storeApi } from "../../../api/store.api"
 import type { Store } from "../../../types/store.type"
+import LoadingLottie from "../../../components/LoadingLottie"
 
 export default function StorePage() {
   const [stores, setStores] = useState<Store[]>([])
@@ -89,7 +90,9 @@ export default function StorePage() {
     }
   }
 
-  if (loading) return <p className="p-6">Loading stores...</p>
+  if (loading) {
+    return <LoadingLottie />
+  }
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -151,10 +154,10 @@ export default function StorePage() {
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`px-3 py-1 text-xs font-semibold rounded-full ${store.type === "FR"
-                          ? "bg-blue-100 text-blue-600"
-                          : store.type === "SC"
-                            ? "bg-purple-100 text-purple-600"
-                            : "bg-green-100 text-green-600"
+                        ? "bg-blue-100 text-blue-600"
+                        : store.type === "SC"
+                          ? "bg-purple-100 text-purple-600"
+                          : "bg-green-100 text-green-600"
                         }`}
                     >
                       {store.type === "FR"

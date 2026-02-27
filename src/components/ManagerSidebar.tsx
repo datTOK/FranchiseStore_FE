@@ -1,16 +1,16 @@
-import { ChefHat, CirclePile, LayoutDashboard, NotepadText, User } from 'lucide-react'
+import { Album, ChefHat, CirclePile, LayoutDashboard, User } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const menu = [
     { label: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
-    { label: 'Inventory', path: '/manager/inventory', icon: CirclePile },
-    { label: 'Reports', path: '/manager/report', icon: NotepadText },
+    { label: 'Category', path: '/manager/category', icon: Album },
+    { label: 'Products', path: '/manager/products', icon: CirclePile },
     { label: "Profile", path: "/manager/profile", icon: User }
 ]
 
 export default function ManagerSidebar() {
     return (
-        <aside className="w-70 bg-amber-600 text-gray-200">
+        <aside className="w-70 bg-gray-900 text-gray-200">
             <div className='flex items-center justify-center pt-4'>
                 <div>
                     <ChefHat className='w-12 h-12' />
@@ -35,8 +35,8 @@ export default function ManagerSidebar() {
                             className={({ isActive }) =>
                                 `flex items-center gap-3 rounded-lg px-4 py-6 text-sm transition
                 ${isActive
-                                    ? 'bg-amber-900 text-white'
-                                    : 'text-gray-300 hover:bg-amber-800 hover:text-white'}`
+                                    ? 'bg-amber-600 text-white'
+                                    : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`
                             }
                         >
                             <Icon className="h-5 w-5" />

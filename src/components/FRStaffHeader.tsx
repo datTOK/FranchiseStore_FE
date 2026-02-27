@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-
+import { doLogout } from "../app/auth/logout";
 export default function FRStaffHeader() {
   const navigate = useNavigate();
 
@@ -27,13 +27,7 @@ export default function FRStaffHeader() {
           </div>
 
           <div className="p-2">
-            <button
-              type="button"
-              onClick={() => navigate("/fr-staff/dashboard")}
-              className="w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
-            >
-              Quản lý hệ thống
-            </button>
+            
             <button
               type="button"
               onClick={() => navigate("/fr-staff/profile")}
@@ -42,12 +36,12 @@ export default function FRStaffHeader() {
               Hồ sơ cá nhân
             </button>
             <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
-            >
-              Đăng xuất
-            </button>
+  type="button"
+  onClick={() => doLogout()}
+  className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
+>
+  Đăng xuất
+</button>
           </div>
         </div>
       </div>

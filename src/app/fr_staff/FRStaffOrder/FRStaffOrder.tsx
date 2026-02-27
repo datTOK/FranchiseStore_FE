@@ -486,7 +486,7 @@ export default function FRStaffOrder() {
       
          {/* CREATE ORDER MODAL */}
       {openCreate ? (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[9999]">
           <div className="w-full max-w-5xl bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col max-h-[85vh]">
             {/* HEADER */}
             <div className="p-4 border-b flex items-center justify-between">

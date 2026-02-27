@@ -1,5 +1,6 @@
 import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { doLogout } from "../app/auth/logout";
 
 const menu = [
   { label: "Dashboard", path: "/ck-staff/dashboard", icon: LayoutDashboard },
@@ -13,7 +14,6 @@ export default function CKStaffSidebar() {
 
   return (
     <aside className="h-full w-[260px] bg-zinc-900 text-zinc-200 flex flex-col justify-between">
-      {/* TOP */}
       <div>
         <div className="flex items-center gap-3 px-6 pt-6">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-800">
@@ -49,11 +49,10 @@ export default function CKStaffSidebar() {
         </nav>
       </div>
 
-      {/* BOTTOM */}
       <div className="border-t border-zinc-800 p-4">
         <button
           type="button"
-          onClick={() => navigate("/login")}
+          onClick={() => doLogout()}
           className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800/70 hover:text-white"
         >
           <LogOut className="h-5 w-5 text-zinc-400" />

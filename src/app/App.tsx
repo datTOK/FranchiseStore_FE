@@ -1,3 +1,4 @@
+import RequireAuth from "./auth/RequireAuth";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import LoginPage from "./auth/login/LoginPage";
@@ -35,70 +36,73 @@ export default function App() {
     <BrowserRouter>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-        {/* AUTH */}
-        <Route path="/login" element={<LoginPage />} />
+  {/* AUTH */}
+  <Route path="/login" element={<LoginPage />} />
 
-        {/* ADMIN */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="users" element={<Users />} />
-          <Route path="categories" element={<Category />} />
-          <Route path="stores" element={<Store />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+  {/* PRIVATE: phải login mới vào được */}
+  <Route element={<RequireAuth />}>
+    {/* ADMIN */}
+    <Route path="/admin" element={<AdminLayout />}>
+      <Route path="dashboard" element={<Dashboard />} />
+      <Route path="users" element={<Users />} />
+      <Route path="categories" element={<Category />} />
+      <Route path="stores" element={<Store />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+    </Route>
 
-        {/* CK STAFF */}
-        <Route path="/ck-staff" element={<CKStaffLayout />}>
-          <Route path="dashboard" element={<CKStaffDashboard />} />
-          <Route path="inventory" element={<CKStaffInventory />} />
-          <Route path="orders" element={<CKStaffOrder />} />
-          <Route path="profile" element={<CKStaffProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+    {/* CK STAFF */}
+    <Route path="/ck-staff" element={<CKStaffLayout />}>
+      <Route path="dashboard" element={<CKStaffDashboard />} />
+      <Route path="inventory" element={<CKStaffInventory />} />
+      <Route path="orders" element={<CKStaffOrder />} />
+      <Route path="profile" element={<CKStaffProfile />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+    </Route>
 
-        {/* FR STAFF */}
-        <Route path="/fr-staff" element={<FRStaffLayout />}>
-          <Route path="dashboard" element={<FRStaffDashboard />} />
-          <Route path="inventory" element={<FRStaffInventory />} />
-          <Route path="orders" element={<FRStaffOrder />} />
-          <Route path="profile" element={<FRStaffProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+    {/* FR STAFF */}
+    <Route path="/fr-staff" element={<FRStaffLayout />}>
+      <Route path="dashboard" element={<FRStaffDashboard />} />
+      <Route path="inventory" element={<FRStaffInventory />} />
+      <Route path="orders" element={<FRStaffOrder />} />
+      <Route path="profile" element={<FRStaffProfile />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+    </Route>
 
-        {/* backward compatible (old staff paths) */}
-        <Route path="/staff" element={<Navigate to="/ck-staff" replace />} />
-        <Route path="/staff/*" element={<Navigate to="/ck-staff" replace />} />
+    {/* backward compatible (old staff paths) */}
+    <Route path="/staff" element={<Navigate to="/ck-staff" replace />} />
+    <Route path="/staff/*" element={<Navigate to="/ck-staff" replace />} />
 
-        <Route path="/central-kitchen" element={<CentralKitchenLayout />}>
-          <Route path="dashboard" element={<KitchenDashboard />} />
-          <Route path="inventory" element={<CKStaffInventory />} />
-          <Route path="production" element={<KitchenProduction />} />
-          <Route path="profile" element={<CKStaffProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+    <Route path="/central-kitchen" element={<CentralKitchenLayout />}>
+      <Route path="dashboard" element={<KitchenDashboard />} />
+      <Route path="inventory" element={<CKStaffInventory />} />
+      <Route path="production" element={<KitchenProduction />} />
+      <Route path="profile" element={<CKStaffProfile />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+    </Route>
 
-        <Route path="/manager" element={<ManagerLayout />}>
-          <Route path="dashboard" element={<ManagerDashboard />} />
-          <Route path="inventory" element={<CKStaffInventory />} />
-          <Route path="report" element={<ManagerReports />} />
-          <Route path="profile" element={<CKStaffProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+    <Route path="/manager" element={<ManagerLayout />}>
+      <Route path="dashboard" element={<ManagerDashboard />} />
+      <Route path="inventory" element={<CKStaffInventory />} />
+      <Route path="report" element={<ManagerReports />} />
+      <Route path="profile" element={<CKStaffProfile />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+    </Route>
 
-        <Route path="/supply-cordinator" element={<SupplyCordinatorLayout />}>
-          <Route path="dashboard" element={<SupplyCordinatorDashboard />} />
-          <Route path="inventory" element={<CKStaffInventory />} />
-          <Route path="report" element={<ManagerReports />} />
-          <Route path="profile" element={<CKStaffProfile />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+    <Route path="/supply-cordinator" element={<SupplyCordinatorLayout />}>
+      <Route path="dashboard" element={<SupplyCordinatorDashboard />} />
+      <Route path="inventory" element={<CKStaffInventory />} />
+      <Route path="report" element={<ManagerReports />} />
+      <Route path="profile" element={<CKStaffProfile />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+    </Route>
+  </Route>
 
-        {/* ROOT */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+  {/* ROOT */}
+  <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* 404 */}
-        <Route path="*" element={<div className="p-6">404 - Not Found</div>} />
-      </Routes>
+  {/* 404 */}
+  <Route path="*" element={<div className="p-6">404 - Not Found</div>} />
+</Routes>
     </BrowserRouter>
   );
 }

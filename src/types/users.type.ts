@@ -42,3 +42,16 @@ export interface CreateUserResponse {
   };
   message: string;
 }
+
+export type Role = "ADMIN" | "FR_STAFF" | "CK_STAFF" | "MANAGER" | "SC_COORDINATOR"
+
+export interface UserProfile {
+  id: number
+  name: string
+  username: string
+  phone: string
+  dob: string
+  role: Role
+  store_id: number | null
+  is_active: number
+}

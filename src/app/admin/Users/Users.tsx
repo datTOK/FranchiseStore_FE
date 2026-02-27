@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CreateUserPayload, GetUsersParams, Users } from '../../../types/users.type';
 import { userApi } from '../../../api/users.api';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import LoadingLottie from '../../../components/LoadingLottie';
+import { storeApi } from '../../../api/store.api'
+import type { Store } from '../../../types/store.type'
 
 export default function UsersPage() {
   const [users, setUsers] = useState<Users[]>([]);
@@ -21,6 +24,7 @@ export default function UsersPage() {
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
+  const [stores, setStores] = useState<Store[]>([])
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -49,6 +53,16 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+    const fetchStores = async () => {
+      try {
+        const res = await storeApi.getAll()
+        setStores(res.data.data)
+      } catch (err) {
+        console.error("Failed to fetch stores", err)
+      }
+    }
+
+    fetchStores()
   }, [fetchUsers]);
 
   const handleCreateUser = async () => {
@@ -81,7 +95,7 @@ export default function UsersPage() {
   };
 
   if (loading) {
-    return <div className="p-6">Loading users...</div>;
+    return <LoadingLottie />
   }
 
   if (error) {
@@ -216,8 +230,8 @@ export default function UsersPage() {
                 <td className="px-6 py-4">
                   <span
                     className={`px-3 py-1 text-xs font-semibold rounded-full ${user.is_active
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-gray-200 text-gray-500'
+                      ? 'bg-green-100 text-green-600'
+                      : 'bg-gray-200 text-gray-500'
                       }`}
                   >
                     {user.is_active ? 'Active' : 'Inactive'}
@@ -239,7 +253,10 @@ export default function UsersPage() {
       {isOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
-            <h3 className="text-xl font-semibold mb-4">Create New User</h3>
+            <div className='flex items-end mb-4 gap-2'>
+              <h3 className="text-xl font-semibold">Create New User</h3>
+              <UserPlus className="w-8 h-8 text-black" />
+            </div>
 
             <div className="space-y-4">
               <input
@@ -298,16 +315,21 @@ export default function UsersPage() {
                 className="w-full border rounded-lg px-3 py-2"
               />
 
-              <input
-                type="number"
-                placeholder="Store ID"
-                min={1}
+              <select
                 value={form.store_id}
                 onChange={(e) =>
                   setForm({ ...form, store_id: Number(e.target.value) })
                 }
                 className="w-full border rounded-lg px-3 py-2"
-              />
+              >
+                <option value={0}>Select Store</option>
+
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name} ({store.type})
+                  </option>
+                ))}
+              </select>
 
               <select
                 value={form.role}

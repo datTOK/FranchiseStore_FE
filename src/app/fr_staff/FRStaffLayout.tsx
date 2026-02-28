@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import FRStaffSidebar from "../../components/FRStaffSidebar";
 import FRStaffHeader from "../../components/FRStaffHeader";
-import bg from "../../assets/staff-bg.jpg";
+
 
 export default function FRStaffLayout() {
   const navigate = useNavigate();
@@ -30,25 +30,35 @@ export default function FRStaffLayout() {
 
   return (
     <div className="min-h-screen w-full bg-zinc-100">
-      {/* Sidebar fixed (ẩn khi màn nhỏ) */}
+      
       <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-40">
         <FRStaffSidebar />
       </div>
 
-      {/* Content area (màn nhỏ không chừa 260px) */}
+      
       <div className="ml-0 md:ml-[260px] min-h-screen relative">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10"
-          style={{ backgroundImage: `url(${bg})` }}
-        />
+        
 
         <div className="relative flex min-h-screen flex-col">
           <div className="sticky top-0 z-30">
             <FRStaffHeader />
           </div>
 
-          <main className="flex-1 overflow-y-auto p-6">
-            <Outlet />
+          <main className="relative flex-1 overflow-y-auto p-6">
+            
+<div
+  className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: 'url("/anhnen.png")' }}
+  aria-hidden="true"
+/>
+
+
+<div className="absolute inset-0 z-0 bg-black/15" aria-hidden="true" />
+
+
+<div className="relative z-10">
+  <Outlet />
+</div>
           </main>
         </div>
       </div>

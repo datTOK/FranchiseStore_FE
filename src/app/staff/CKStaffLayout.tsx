@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import CKStaffSidebar from "../../components/CKStaffSidebar";
 import CKStaffHeader from "../../components/CKStaffHeader";
-import bg from "../../assets/staff-bg.jpg";
+
 
 export default function CKStaffLayout() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function CKStaffLayout() {
   }, [location.pathname, navigate]);
 
   return (
-    <div className="min-h-screen w-full bg-zinc-100">
+    <div className="min-h-screen w-full bg-transparent">
       {/* Sidebar fixed */}
       <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-40">
         <CKStaffSidebar />
@@ -39,10 +39,7 @@ export default function CKStaffLayout() {
 
       {/* Content area (chừa chỗ sidebar) */}
       <div className="ml-0 md:ml-[260px] min-h-screen relative">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10"
-          style={{ backgroundImage: `url(${bg})` }}
-        />
+        
 
         <div className="relative flex min-h-screen flex-col">
           {/* Header cố định trên top */}
@@ -51,8 +48,19 @@ export default function CKStaffLayout() {
           </div>
 
           {/* Chỉ main cuộn */}
-          <main className="flex-1 overflow-y-auto p-6">
-            <Outlet />
+          <main className="relative flex-1 overflow-y-auto p-6">
+            {/* Background */}
+<div
+  className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: 'url("/anhnen.png")' }}
+  aria-hidden="true"
+/>
+
+{/* Overlay làm ảnh đậm */}
+<div className="absolute inset-0 z-0 bg-black/15" aria-hidden="true" />
+            <div className="relative z-10">
+  <Outlet />
+</div>
           </main>
         </div>
       </div>

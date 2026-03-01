@@ -1,4 +1,4 @@
-import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User } from "lucide-react";
+import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User, PackageOpen } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { ClipboardCheck } from "lucide-react";
 import { doLogout } from "../app/auth/logout";
@@ -8,6 +8,7 @@ const menu = [
   { label: "Inventory", path: "/ck-staff/inventory", icon: CirclePile },
   { label: "Orders", path: "/ck-staff/orders", icon: NotepadText },
   { label: "Reservations", path: "/ck-staff/reservations", icon: ClipboardCheck },
+  { label: "Goods Issue", path: "/ck-staff/goods-issues", icon: PackageOpen },
   { label: "Profile", path: "/ck-staff/profile", icon: User },
 ];
 

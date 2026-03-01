@@ -1,8 +1,24 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from "react"
+import axiosClient from "./../api/axiosClient" 
 import { doLogout } from "../app/auth/logout";
 
 export default function StaffHeader() {
   const navigate = useNavigate()
+  const [me, setMe] = useState<any>(null)
+
+useEffect(() => {
+  const fetchMe = async () => {
+    try {
+      const res: any = await axiosClient.get("/auth/me")
+      const user = res?.data?.data ?? res?.data ?? null
+      setMe(user)
+    } catch {
+      setMe(null)
+    }
+  }
+  fetchMe()
+}, [])
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between bg-zinc-100/80 px-6 backdrop-blur supports-[backdrop-filter]:bg-zinc-100/60">
@@ -18,13 +34,19 @@ export default function StaffHeader() {
             alt="Staff Avatar"
             className="h-9 w-9 rounded-full border-2 border-amber-300 object-cover"
           />
-          <span className="hidden text-sm font-medium text-zinc-800 sm:block">Nguyen Van A</span>
+          <span className="hidden text-sm font-medium text-zinc-800 sm:block">
+  {me?.name || "User"}
+</span>
         </div>
 
         <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-zinc-200 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
           <div className="px-4 py-3 border-b border-zinc-100">
-            <div className="text-sm font-semibold text-zinc-900">Staff</div>
-            <div className="text-xs text-zinc-500 truncate">staff2026@gmail.com</div>
+            <div className="text-sm font-semibold text-zinc-900">
+  {me?.role || "Staff"}
+</div>
+            <div className="text-xs text-zinc-500 truncate">
+  {me?.username || ""}
+</div>
           </div>
 
           <div className="p-2">
@@ -34,14 +56,14 @@ export default function StaffHeader() {
               onClick={() => navigate('/staff/profile')}
               className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
             >
-              Hồ sơ cá nhân
+              Profile
             </button>
             <button
     type="button"
     onClick={() => doLogout()}
     className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
   >
-    Đăng xuất
+    Logout
   </button>
           </div>
         </div>

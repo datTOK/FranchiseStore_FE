@@ -7,7 +7,7 @@ export type InventoryItem = {
   type: string;
   category_name: string;
   qty: number;
-  status: "Active" | "Inactive";
+  status: "In stock" | "Low stock" | "Out of stock";
 };
 
 
@@ -21,8 +21,10 @@ type Props = {
   filterType: any;
   setFilterType: React.Dispatch<React.SetStateAction<any>>;
   totalItems: number;
-  activeItems: number;
-  rawMaterialCount: number;
+  inStockCount: number;
+lowStockCount: number;
+outOfStockCount: number;
+rawMaterialCount: number;
 };
 
 function getTypeLabel(type: string) {
@@ -47,16 +49,20 @@ export default function StaffInventoryTable(props: Props) {
     filterType,
     setFilterType,
     totalItems,
-    activeItems,
-    rawMaterialCount,
+inStockCount,
+lowStockCount,
+outOfStockCount,
+rawMaterialCount,
   } = props;
 
   return (
     <div style={{ padding: 24 }}>
       <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-        <Card title="Total Items" value={totalItems} sub="Total items in stock" />
-        <Card title="Active Items" value={activeItems} sub="Items with Active status" />
-        <Card title="Raw Material" value={rawMaterialCount} sub="Number of raw materials" />
+        <Card title="Total Items" value={totalItems} sub="All items" />
+<Card title="In stock" value={inStockCount} sub="Qty > 10" />
+<Card title="Low stock" value={lowStockCount} sub="Qty 1 - 10" />
+<Card title="Out of stock" value={outOfStockCount} sub="Qty = 0" />
+<Card title="Raw Material" value={rawMaterialCount} sub="Number of raw materials" />
       </div>
 
       <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
@@ -128,7 +134,12 @@ export default function StaffInventoryTable(props: Props) {
                           borderRadius: 999,
                           fontSize: 12,
                           border: "1px solid #ddd",
-                          background: x.status === "Active" ? "#e9fff2" : "#fff2f2",
+                          background:
+  x.status === "In stock"
+    ? "#e9fff2"
+    : x.status === "Low stock"
+    ? "#fff7e6"
+    : "#fff2f2",
                         }}
                       >
                         {x.status}

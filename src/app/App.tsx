@@ -12,6 +12,7 @@ import CKStaffDashboard from "./staff/CKStaffDashboard/CKStaffDashboard";
 import CKStaffInventory from "./staff/CKStaffInventory/CKStaffInventory";
 import CKStaffOrder from "./staff/CKStaffOrder/CKStaffOrder";
 import CKStaffProfile from "./staff/CKStaffProfile/CKStaffProfile";
+import CKStaffReservations from "./staff/CKStaffReservations/CKStaffReservations";
 
 // FR Staff (Franchise Store Staff)
 import FRStaffLayout from "./fr_staff/FRStaffLayout";
@@ -58,6 +59,7 @@ export default function App() {
       <Route path="dashboard" element={<CKStaffDashboard />} />
       <Route path="inventory" element={<CKStaffInventory />} />
       <Route path="orders" element={<CKStaffOrder />} />
+      <Route path="reservations" element={<CKStaffReservations />} />
       <Route path="profile" element={<CKStaffProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>

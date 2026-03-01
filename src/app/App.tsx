@@ -13,12 +13,14 @@ import CKStaffInventory from "./staff/CKStaffInventory/CKStaffInventory";
 import CKStaffOrder from "./staff/CKStaffOrder/CKStaffOrder";
 import CKStaffProfile from "./staff/CKStaffProfile/CKStaffProfile";
 import CKStaffReservations from "./staff/CKStaffReservations/CKStaffReservations";
+import CKStaffGoodsIssue from "./staff/CKStaffGoodsIssue/CKStaffGoodsIssue";
 
 // FR Staff (Franchise Store Staff)
 import FRStaffLayout from "./fr_staff/FRStaffLayout";
 import FRStaffDashboard from "./fr_staff/FRStaffDashboard/FRStaffDashboard";
 import FRStaffInventory from "./fr_staff/FRStaffInventory/FRStaffInventory";
 import FRStaffOrder from "./fr_staff/FRStaffOrder/FRStaffOrder";
+import FRStaffGoodsReceipt from "./fr_staff/FRStaffGoodsReceipt/FRStaffGoodsReceipt";
 import FRStaffProfile from "./fr_staff/FRStaffProfile/FRStaffProfile";
 import CentralKitchenLayout from "./central_kitchen/CentralKitchenLayout";
 import KitchenDashboard from "./central_kitchen/KitchenDashboard/KitchenDashboard";
@@ -60,6 +62,7 @@ export default function App() {
       <Route path="inventory" element={<CKStaffInventory />} />
       <Route path="orders" element={<CKStaffOrder />} />
       <Route path="reservations" element={<CKStaffReservations />} />
+      <Route path="goods-issues" element={<CKStaffGoodsIssue />} />
       <Route path="profile" element={<CKStaffProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>
@@ -69,6 +72,7 @@ export default function App() {
       <Route path="dashboard" element={<FRStaffDashboard />} />
       <Route path="inventory" element={<FRStaffInventory />} />
       <Route path="orders" element={<FRStaffOrder />} />
+      <Route path="goods-receipts" element={<FRStaffGoodsReceipt />} />
       <Route path="profile" element={<FRStaffProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>

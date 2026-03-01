@@ -16,6 +16,7 @@ function toNumber(v: any) {
 
 function mapInventoryToRow(i: InventoryItemApi, categoryName: string): InventoryItem {
   const qty = toNumber(i.available_quantity ?? i.quantity);
+  const LOW_STOCK_THRESHOLD = 10; // <=10 là Low stock, bạn muốn đổi số thì đổi ở đây
   return {
     id: i.id,
     sku: i.sku,
@@ -23,7 +24,7 @@ function mapInventoryToRow(i: InventoryItemApi, categoryName: string): Inventory
     type: i.product_type, // giữ RAW_MATERIAL | SEMI_FINISHED | FINISHED
     category_name: categoryName || String(i.category_id ?? "-"),
     qty,
-    status: qty > 0 ? "Active" : "Inactive",
+    status: qty <= 0 ? "Out of stock" : qty <= LOW_STOCK_THRESHOLD ? "Low stock" : "In stock",
   };
 }
 
@@ -74,8 +75,10 @@ export default function StaffInventory() {
   }, [inventory, searchTerm, filterType]);
 
   const totalItems = inventory.length;
-  const activeItems = inventory.filter((i) => i.status === "Active").length;
-  const rawMaterialCount = inventory.filter((i) => i.type === "RAW_MATERIAL").length;
+  const inStockCount = inventory.filter((i) => i.status === "In stock").length;
+const lowStockCount = inventory.filter((i) => i.status === "Low stock").length;
+const outOfStockCount = inventory.filter((i) => i.status === "Out of stock").length;
+const rawMaterialCount = inventory.filter((i) => i.type === "RAW_MATERIAL").length;
 
   return (
     <div>
@@ -84,14 +87,15 @@ export default function StaffInventory() {
 
       <StaffInventoryTable
         inventory={filteredInventory}
-        
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterType={filterType}
-        setFilterType={setFilterType as any}
-        totalItems={totalItems}
-        activeItems={activeItems}
-        rawMaterialCount={rawMaterialCount}
+  searchTerm={searchTerm}
+  setSearchTerm={setSearchTerm}
+  filterType={filterType}
+  setFilterType={setFilterType as any}
+  totalItems={totalItems}
+  inStockCount={inStockCount}
+  lowStockCount={lowStockCount}
+  outOfStockCount={outOfStockCount}
+  rawMaterialCount={rawMaterialCount}
       />
     </div>
   );

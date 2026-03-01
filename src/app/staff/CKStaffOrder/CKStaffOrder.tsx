@@ -52,13 +52,6 @@ function canConfirm(s: OrderStatus) {
   return normStatus(s) === "SUBMITTED";
 }
 
-function canIssue(s: OrderStatus) {
-  return normStatus(s) === "CONFIRMED";
-}
-
-function canDeliver(s: OrderStatus) {
-  return normStatus(s) === "ISSUED";
-}
 
 export default function StaffOrder() {
   const [loading, setLoading] = useState(false);
@@ -267,47 +260,21 @@ export default function StaffOrder() {
                   <td className="px-4 py-3">{normStatus(o.status)}</td>
 
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        disabled={!canConfirm(o.status) || loading}
-                        onClick={() => onAction(() => orderApi.confirm(o.id))}
-                        className={[
-                          "px-3 py-1.5 rounded-lg border",
-                          canConfirm(o.status)
-                            ? "border-yellow-300 bg-yellow-50 hover:bg-yellow-100"
-                            : "border-gray-200 bg-gray-50 text-gray-400",
-                        ].join(" ")}
-                      >
-                        Confirm
-                      </button>
-
-                      <button
-                        disabled={!canIssue(o.status) || loading}
-                        onClick={() => onAction(() => orderApi.issue(o.id))}
-                        className={[
-                          "px-3 py-1.5 rounded-lg border",
-                          canIssue(o.status)
-                            ? "border-orange-300 bg-orange-50 hover:bg-orange-100"
-                            : "border-gray-200 bg-gray-50 text-gray-400",
-                        ].join(" ")}
-                      >
-                        Issue
-                      </button>
-
-                      <button
-                        disabled={!canDeliver(o.status) || loading}
-                        onClick={() => onAction(() => orderApi.deliver(o.id))}
-                        className={[
-                          "px-3 py-1.5 rounded-lg border",
-                          canDeliver(o.status)
-                            ? "border-green-300 bg-green-50 hover:bg-green-100"
-                            : "border-gray-200 bg-gray-50 text-gray-400",
-                        ].join(" ")}
-                      >
-                        Deliver
-                      </button>
-                    </div>
-                  </td>
+  <div className="flex flex-wrap gap-2">
+    <button
+      disabled={!canConfirm(o.status) || loading}
+      onClick={() => onAction(() => orderApi.confirm(o.id))}
+      className={[
+        "px-3 py-1.5 rounded-lg border",
+        canConfirm(o.status)
+          ? "border-yellow-300 bg-yellow-50 hover:bg-yellow-100"
+          : "border-gray-200 bg-gray-50 text-gray-400",
+      ].join(" ")}
+    >
+      Confirm
+    </button>
+  </div>
+</td>
 
                   <td className="px-4 py-3">
   <button

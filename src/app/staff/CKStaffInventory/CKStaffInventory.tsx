@@ -1,30 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import StaffInventoryTable from "../../../components/CKStaffInventory";
-import type { InventoryItem, InventoryLog } from "../../../components/CKStaffInventory";
+import type { InventoryItem } from "../../../components/CKStaffInventory";
 import inventoryApi from "../../../api/inventoryApi";
 import type { InventoryItemApi, ProductType } from "../../../api/inventoryApi";
 import { categoryApi } from "../../../api/category.api";
 
-const MOCK_LOGS: InventoryLog[] = [
-  {
-    id: "L001",
-    type: "Import",
-    itemName: "Bột mì số 8",
-    quantity: 50,
-    date: "2026-02-08 08:30",
-    performer: "Nguyen Van A",
-    referenceDoc: "PO-2026-001",
-  },
-  {
-    id: "L002",
-    type: "Export",
-    itemName: "Đường tinh luyện",
-    quantity: -5,
-    date: "2026-02-09 10:15",
-    performer: "Tran Thi B",
-    referenceDoc: "ORD-Store-01",
-  },
-];
+
+  
+
 
 function toNumber(v: any) {
   const n = typeof v === "string" ? Number(v) : v;
@@ -46,7 +29,7 @@ function mapInventoryToRow(i: InventoryItemApi, categoryName: string): Inventory
 
 export default function StaffInventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"inventory" | "history">("inventory");
+ 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<ProductType | "All">("All");
   const [loading, setLoading] = useState(false);
@@ -101,9 +84,7 @@ export default function StaffInventory() {
 
       <StaffInventoryTable
         inventory={filteredInventory}
-        logs={MOCK_LOGS}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filterType={filterType}

@@ -398,9 +398,7 @@ export default function FRStaffOrder() {
                 </th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">
-                  Actions
-                </th>
+                
                 <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
               </tr>
             </thead>
@@ -417,48 +415,7 @@ export default function FRStaffOrder() {
                   <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
                   <td className="px-4 py-3">{normStatus(o.status)}</td>
 
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        disabled={!canConfirm(o.status) || loading}
-                        onClick={() => onAction(() => orderApi.confirm(o.id))}
-                        className={[
-                          "px-3 py-1.5 rounded-lg border",
-                          canConfirm(o.status)
-                            ? "border-yellow-300 bg-yellow-50 hover:bg-yellow-100"
-                            : "border-gray-200 bg-gray-50 text-gray-400",
-                        ].join(" ")}
-                      >
-                        Confirm
-                      </button>
-
-                      <button
-                        disabled={!canIssue(o.status) || loading}
-                        onClick={() => onAction(() => orderApi.issue(o.id))}
-                        className={[
-                          "px-3 py-1.5 rounded-lg border",
-                          canIssue(o.status)
-                            ? "border-orange-300 bg-orange-50 hover:bg-orange-100"
-                            : "border-gray-200 bg-gray-50 text-gray-400",
-                        ].join(" ")}
-                      >
-                        Issue
-                      </button>
-
-                      <button
-                        disabled={!canDeliver(o.status) || loading}
-                        onClick={() => onAction(() => orderApi.deliver(o.id))}
-                        className={[
-                          "px-3 py-1.5 rounded-lg border",
-                          canDeliver(o.status)
-                            ? "border-green-300 bg-green-50 hover:bg-green-100"
-                            : "border-gray-200 bg-gray-50 text-gray-400",
-                        ].join(" ")}
-                      >
-                        Deliver
-                      </button>
-                    </div>
-                  </td>
+                  
 
                   <td className="px-4 py-3">
                     <button
@@ -532,7 +489,7 @@ export default function FRStaffOrder() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm table-fixed">
                     <thead className="bg-white text-gray-700">
                       <tr className="border-b">
                         <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>

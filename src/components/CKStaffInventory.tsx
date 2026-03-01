@@ -10,21 +10,12 @@ export type InventoryItem = {
   status: "Active" | "Inactive";
 };
 
-export type InventoryLog = {
-  id: string;
-  type: "Import" | "Export";
-  itemName: string;
-  quantity: number;
-  date: string;
-  performer: string;
-  referenceDoc: string;
-};
+
 
 type Props = {
   inventory: InventoryItem[];
-  logs: InventoryLog[];
-  activeTab: "inventory" | "history";
-  setActiveTab: React.Dispatch<React.SetStateAction<"inventory" | "history">>;
+  
+ 
   searchTerm: string;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   filterType: any;
@@ -50,9 +41,7 @@ function getTypeLabel(type: string) {
 export default function StaffInventoryTable(props: Props) {
   const {
     inventory,
-    logs,
-    activeTab,
-    setActiveTab,
+    
     searchTerm,
     setSearchTerm,
     filterType,
@@ -72,12 +61,7 @@ export default function StaffInventoryTable(props: Props) {
 
       <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12 }}>
-          <Tab active={activeTab === "inventory"} onClick={() => setActiveTab("inventory")}>
-            Inventory List
-          </Tab>
-          <Tab active={activeTab === "history"} onClick={() => setActiveTab("history")}>
-            Stock History
-          </Tab>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>Inventory List</div>
 
           <div style={{ flex: 1 }} />
 
@@ -112,7 +96,7 @@ export default function StaffInventoryTable(props: Props) {
           </select>
         </div>
 
-        {activeTab === "inventory" ? (
+        
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -177,36 +161,7 @@ export default function StaffInventoryTable(props: Props) {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f6f7fb" }}>
-                  <Th>ID</Th>
-                  <Th>Type</Th>
-                  <Th>Item</Th>
-                  <Th>Qty</Th>
-                  <Th>Date</Th>
-                  <Th>Performer</Th>
-                  <Th>Ref</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((l) => (
-                  <tr key={l.id} style={{ borderTop: "1px solid #eee" }}>
-                    <Td>{l.id}</Td>
-                    <Td>{l.type}</Td>
-                    <Td>{l.itemName}</Td>
-                    <Td>{l.quantity}</Td>
-                    <Td>{l.date}</Td>
-                    <Td>{l.performer}</Td>
-                    <Td>{l.referenceDoc}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        
       </div>
     </div>
   );
@@ -222,22 +177,7 @@ function Card(props: { title: string; value: number; sub: string }) {
   );
 }
 
-function Tab(props: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={props.onClick}
-      style={{
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-        fontWeight: props.active ? 700 : 500,
-        color: props.active ? "#f97316" : "#555",
-      }}
-    >
-      {props.children}
-    </button>
-  );
-}
+
 
 function Th(props: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return <th {...props} style={{ textAlign: "left", padding: 12, fontSize: 13, color: "#111" }} />;

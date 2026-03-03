@@ -1,5 +1,5 @@
 import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { PackageCheck } from "lucide-react";
 import { doLogout } from "../app/auth/logout";
 
@@ -12,7 +12,7 @@ const menu = [
 ];
 
 export default function FRStaffSidebar() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   return (
     <aside className="h-full w-[260px] bg-zinc-900 text-zinc-200 flex flex-col justify-between">

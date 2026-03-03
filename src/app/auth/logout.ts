@@ -9,8 +9,8 @@ export function doLogout() {
   localStorage.removeItem("access_token");
 
   // 2) Xóa Authorization header (tránh axios giữ token cũ trong memory)
-  delete (axiosClient.defaults.headers as any).Authorization;
-  delete (axiosClient.defaults.headers as any).authorization;
+  delete (axiosClient.defaults.headers as Record<string, string>).Authorization;
+  delete (axiosClient.defaults.headers as Record<string, string>).authorization;
 
   // 3) Bắn tín hiệu logout cho các tab khác
   localStorage.setItem("logoutAt", String(Date.now()));

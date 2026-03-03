@@ -1,22 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import goodsIssueApi from "../../../api/goodsIssueApi";
-import orderApi from "../../../api/orderApi";
-import productApi from "../../../api/productApi";
+import goodsIssueApi, { type GoodsIssueRow, type GoodsIssueStatus } from "../../../api/goodsIssueApi";
+import orderApi, { type OrderRow, type GetOrdersResponse } from "../../../api/orderApi";
+import productApi, { type ProductItem, type ProductListResponse } from "../../../api/productApi";
 import { storeApi } from "../../../api/store.api";
+import type { Store } from "../../../types/store.type";
 
 type ItemRow = {
   product_id: number;
   quantity: number;
 };
 
-function toNum(v: any, fallback = 0) {
+function toNum(v: unknown, fallback = 0): number {
   const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : fallback;
+  return typeof n === "number" && Number.isFinite(n) ? n : fallback;
 }
 
-function normStatus(s: any) {
+function normStatus(s: unknown) {
   return String(s ?? "").toUpperCase().trim();
+}
+
+type ErrorShape = {
+  message?: string;
+  response?: { data?: { message?: string } };
+};
+
+function getErrorMessage(e: unknown, fallback: string) {
+  const err = e as ErrorShape;
+  return err?.response?.data?.message || err?.message || fallback;
+}
+
+function getStoreName(s: Store): string {
+  const alias = s as unknown as { store_name?: string };
+  return s.name ?? alias.store_name ?? `Store ${s.id}`;
 }
 
 export default function CKStaffGoodsIssue() {
@@ -28,18 +44,18 @@ export default function CKStaffGoodsIssue() {
 
   // list
   const [loadingList, setLoadingList] = useState(false);
-  const [goodsIssues, setGoodsIssues] = useState<any[]>([]);
+  const [goodsIssues, setGoodsIssues] = useState<GoodsIssueRow[]>([]);
 
   // dropdown data
-  const [orders, setOrders] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
 
   const storeMap = useMemo(() => {
     const m = new Map<number, string>();
     for (const s of stores) {
       const id = toNum(s?.id, 0);
-      if (id > 0) m.set(id, String(s?.name ?? s?.store_name ?? `Store ${id}`));
+      if (id > 0) m.set(id, String(getStoreName(s)));
     }
     return m;
   }, [stores]);
@@ -47,11 +63,15 @@ export default function CKStaffGoodsIssue() {
   const refreshList = async () => {
     try {
       setLoadingList(true);
-      const res: any = await goodsIssueApi.getAll();
-      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const res = await goodsIssueApi.getAll();
+      const list: GoodsIssueRow[] = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+        ? (res.data as unknown as GoodsIssueRow[])
+        : [];
       setGoodsIssues(list);
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Load goods issues thất bại");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Load goods issues thất bại"));
     } finally {
       setLoadingList(false);
     }
@@ -61,29 +81,34 @@ export default function CKStaffGoodsIssue() {
     const fetchData = async () => {
       try {
         // orders
-        const oRes: any = await orderApi.getAll();
-        const oList = Array.isArray(oRes?.data) ? oRes.data : Array.isArray(oRes?.data?.data) ? oRes.data.data : [];
+        const oRes = await orderApi.getAll();
+        const oList: OrderRow[] = Array.isArray((oRes as GetOrdersResponse)?.data)
+          ? ((oRes as GetOrdersResponse).data as OrderRow[])
+          : [];
         setOrders(oList);
 
         // products
-        const pRes: any = await productApi.getAll();
-        const pList = Array.isArray(pRes?.data) ? pRes.data : Array.isArray(pRes?.data?.data) ? pRes.data.data : [];
+        const pRes = await productApi.getAll();
+        const pList: ProductItem[] = Array.isArray((pRes as ProductListResponse)?.data)
+          ? ((pRes as ProductListResponse).data as ProductItem[])
+          : [];
         setProducts(pList);
 
         // stores
-        const sRes: any = await storeApi.getAll();
-        const sList = Array.isArray(sRes?.data?.data) ? sRes.data.data : Array.isArray(sRes?.data) ? sRes.data : [];
+        const sRes = await storeApi.getAll();
+        const sList: Store[] = Array.isArray(sRes?.data?.data)
+          ? (sRes.data.data as Store[])
+          : [];
         setStores(sList);
 
         // list goods issues
         await refreshList();
-      } catch (e: any) {
-        toast.error(e?.response?.data?.message || e?.message || "Load data thất bại");
+      } catch (e: unknown) {
+        toast.error(getErrorMessage(e, "Load data thất bại"));
       }
     };
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateItem = (idx: number, key: keyof ItemRow, value: number) => {
@@ -124,8 +149,8 @@ export default function CKStaffGoodsIssue() {
       setStoreTo("");
       setItems([{ product_id: 0, quantity: 1 }]);
       await refreshList();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Create goods issue thất bại");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Create goods issue thất bại"));
     } finally {
       setLoadingCreate(false);
     }
@@ -136,8 +161,8 @@ export default function CKStaffGoodsIssue() {
       await goodsIssueApi.complete(id);
       toast.success("Complete thành công");
       await refreshList();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Complete thất bại");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Complete thất bại"));
     }
   };
 
@@ -200,7 +225,7 @@ export default function CKStaffGoodsIssue() {
                 }}
               >
                 <option value="">(Select order)</option>
-                {orders.map((o: any) => (
+                {orders.map((o) => (
                   <option key={o.id} value={String(o.id)}>
                     {o.id} - {o.order_code}
                   </option>
@@ -221,9 +246,9 @@ export default function CKStaffGoodsIssue() {
                 }}
               >
                 <option value="">(Select store_to)</option>
-                {stores.map((s: any) => (
+                {stores.map((s) => (
                   <option key={s.id} value={String(s.id)}>
-                    {s.id} - {s.name ?? s.store_name}
+                    {s.id} - {getStoreName(s)}
                   </option>
                 ))}
               </select>
@@ -256,7 +281,7 @@ export default function CKStaffGoodsIssue() {
                   }}
                 >
                   <option value="0">(Select product)</option>
-                  {products.map((p: any) => (
+                  {products.map((p) => (
                     <option key={p.id} value={String(p.id)}>
                       {p.id} - {p.name}
                     </option>
@@ -347,8 +372,8 @@ export default function CKStaffGoodsIssue() {
               </thead>
 
               <tbody>
-                {goodsIssues.map((gi: any) => {
-                  const st = normStatus(gi?.status);
+                {goodsIssues.map((gi) => {
+                  const st = normStatus(gi?.status as GoodsIssueStatus);
                   const canComplete = st !== "COMPLETED";
                   return (
                     <tr key={gi.id}>

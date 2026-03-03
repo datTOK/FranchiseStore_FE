@@ -10,7 +10,20 @@ export type CreateReservationPayload = {
   items: ReservationItemInput[];
 };
 
-export type ReservationResponse = any;
+export type ReservationResponse = {
+  id: number;
+  order_id?: number;
+  items: Array<{
+    product_id: number;
+    quantity: number;
+  }>;
+  total_price: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  updated_by: number | null;
+};
 
 const reservationApi = {
   create(payload: CreateReservationPayload) {

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import reservationApi from "../../../api/reservationApi";
 import orderApi from "../../../api/orderApi";
-import productApi from "../../../api/productApi";
+import productApi, { type ProductItem } from "../../../api/productApi";
+import type { OrderRow } from "../../../api/orderApi";
+import type { CreateReservationPayload, ReservationItemInput } from "../../../api/reservationApi";
 
 type ReservationItemRow = {
   product_id: number;
@@ -20,9 +22,14 @@ type LastCreatedInfo = {
   }>;
 };
 
-function toNum(v: any, fallback = 0) {
+function toNum(v: unknown, fallback = 0) {
   const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : fallback;
+  return typeof n === "number" && Number.isFinite(n) ? n : fallback;
+}
+
+function getProductName(p: ProductItem, fallbackId: number) {
+  const alias = p as unknown as { product_name?: string };
+  return String(p.name ?? alias.product_name ?? `Product ${fallbackId}`);
 }
 
 export default function CKStaffReservations() {
@@ -37,8 +44,8 @@ export default function CKStaffReservations() {
   const [loadingComplete, setLoadingComplete] = useState(false);
 
   // dropdown data
-  const [orders, setOrders] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
 
   // show result after create
   const [lastCreated, setLastCreated] = useState<LastCreatedInfo | null>(null);
@@ -47,7 +54,7 @@ export default function CKStaffReservations() {
     const m = new Map<number, string>();
     for (const p of products) {
       const id = toNum(p?.id, 0);
-      if (id > 0) m.set(id, String(p?.name ?? p?.product_name ?? `Product ${id}`));
+      if (id > 0) m.set(id, getProductName(p, id));
     }
     return m;
   }, [products]);
@@ -56,24 +63,17 @@ export default function CKStaffReservations() {
     const fetchData = async () => {
       try {
         // orders
-        const oRes: any = await orderApi.getAll();
-        const oList = Array.isArray(oRes?.data)
-          ? oRes.data
-          : Array.isArray(oRes?.data?.data)
-          ? oRes.data.data
-          : [];
+        const oRes = await orderApi.getAll();
+        const oList = Array.isArray((oRes as { data?: OrderRow[] })?.data) ? ((oRes as { data?: OrderRow[] }).data as OrderRow[]) : [];
         setOrders(oList);
 
         // products
-        const pRes: any = await productApi.getAll();
-        const pList = Array.isArray(pRes?.data)
-          ? pRes.data
-          : Array.isArray(pRes?.data?.data)
-          ? pRes.data.data
-          : [];
+        const pRes = await productApi.getAll();
+        const pList = Array.isArray((pRes as { data?: ProductItem[] })?.data) ? ((pRes as { data?: ProductItem[] }).data as ProductItem[]) : [];
         setProducts(pList);
-      } catch (e: any) {
-        toast.error(e?.response?.data?.message || e?.message || "Load orders/products thất bại");
+      } catch (e: unknown) {
+        const err = e as { response?: { data?: { message?: string } }; message?: string };
+        toast.error(err?.response?.data?.message || err?.message || "Load orders/products thất bại");
       }
     };
 
@@ -98,21 +98,27 @@ export default function CKStaffReservations() {
       return;
     }
 
-    const payload: any = { items: cleaned };
+    const payload: CreateReservationPayload = { items: cleaned as ReservationItemInput[] };
     const oid = toNum(orderId, 0);
     if (orderId.trim() !== "" && oid > 0) payload.order_id = oid;
 
     try {
       setLoadingCreate(true);
 
-      const res: any = await reservationApi.create(payload);
+      const res = await reservationApi.create(payload);
 
       // lấy reservation id từ backend
-      const reservationId =
-        res?.data?.id ??
-        res?.data?.reservation_id ??
-        res?.data?.data?.id ??
-        res?.data?.data?.reservation_id;
+      const extractId = (r: unknown): number | undefined => {
+        const outer = (r as { data?: unknown })?.data as unknown;
+        const primary = (outer as { id?: number; reservation_id?: number })?.id ??
+          (outer as { id?: number; reservation_id?: number })?.reservation_id;
+        if (typeof primary === "number") return primary;
+        const inner = (outer as { data?: unknown })?.data as unknown;
+        const secondary = (inner as { id?: number; reservation_id?: number })?.id ??
+          (inner as { id?: number; reservation_id?: number })?.reservation_id;
+        return typeof secondary === "number" ? secondary : undefined;
+      };
+      const reservationId = extractId(res);
 
       if (!reservationId) {
         toast.error("Backend không trả reservation id (không thể auto-complete).");
@@ -135,8 +141,9 @@ export default function CKStaffReservations() {
       // reset form
       setOrderId("");
       setItems([{ product_id: 0, quantity: 1 }]);
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Create reservation thất bại");
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(err?.response?.data?.message || err?.message || "Create reservation thất bại");
     } finally {
       setLoadingCreate(false);
     }
@@ -150,8 +157,9 @@ export default function CKStaffReservations() {
       await reservationApi.complete(lastCreated.reservation_id);
       toast.success("Complete thành công");
       setLastCreated(null);
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Complete thất bại");
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(err?.response?.data?.message || err?.message || "Complete thất bại");
     } finally {
       setLoadingComplete(false);
     }
@@ -204,7 +212,7 @@ export default function CKStaffReservations() {
               }}
             >
               <option value="">(Select order)</option>
-              {orders.map((o: any) => (
+              {orders.map((o) => (
                 <option key={o.id} value={String(o.id)}>
                   {o.id} - {o.order_code}
                 </option>
@@ -238,7 +246,7 @@ export default function CKStaffReservations() {
                   }}
                 >
                   <option value="0">(Select product)</option>
-                  {products.map((p: any) => (
+                  {products.map((p) => (
                     <option key={p.id} value={String(p.id)}>
                       {p.id} - {p.name}
                     </option>

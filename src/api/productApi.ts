@@ -13,8 +13,8 @@ export interface ProductItem {
   is_active: number;
   created_at: string;
   updated_at: string;
-  created_by: any;
-  updated_by: any;
+  created_by: number | null;
+  updated_by: number | null;
 }
 
 export interface ProductListResponse {

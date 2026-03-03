@@ -21,15 +21,15 @@ type OrderDetail = {
   delivery_date: string;
   status: OrderStatus;
   total_amount: number | string;
-  created_by: any;
-  confirmed_by: any;
-  issued_by: any;
+  created_by: number | null;
+  confirmed_by: number | null;
+  issued_by: number | null;
   items?: OrderItemRow[];
 };
 
-function toNumber(v: any) {
+function toNumber(v: string | number | undefined) {
   const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : 0;
+  return typeof n === "number" && Number.isFinite(n) ? n : 0;
 }
 
 function formatMoney(v: string | number) {
@@ -50,6 +50,16 @@ function normStatus(s: OrderStatus) {
 
 function canConfirm(s: OrderStatus) {
   return normStatus(s) === "SUBMITTED";
+}
+
+type ErrorShape = {
+  message?: string;
+  response?: { data?: { message?: string } };
+};
+
+function getErrorMessage(e: unknown, fallback: string) {
+  const err = e as ErrorShape;
+  return err?.response?.data?.message || err?.message || fallback;
 }
 
 
@@ -76,8 +86,8 @@ export default function StaffOrder() {
     try {
       const o = await orderApi.getAll();
       setOrders(Array.isArray(o?.data) ? o.data : []);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Load orders failed");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Load orders failed"));
       setOrders([]);
     } finally {
       setLoading(false);
@@ -86,7 +96,6 @@ export default function StaffOrder() {
 
   useEffect(() => {
     fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {
@@ -103,14 +112,14 @@ export default function StaffOrder() {
   const issued = useMemo(() => orders.filter((o) => normStatus(o.status) === "ISSUED").length, [orders]);
   const delivered = useMemo(() => orders.filter((o) => normStatus(o.status) === "DELIVERED").length, [orders]);
 
-  const onAction = async (fn: () => Promise<any>) => {
+  const onAction = async (fn: () => Promise<unknown>) => {
     setError("");
     setLoading(true);
     try {
       await fn();
       await fetchAll();
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Action failed");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Action failed"));
     } finally {
       setLoading(false);
     }
@@ -132,7 +141,7 @@ export default function StaffOrder() {
 
     try {
       const res = await axiosClient.get<{ data: OrderDetail }>(`/orders/${orderId}`);
-      const d = (res as any)?.data?.data || (res as any)?.data || null;
+      const d = (res.data as { data?: OrderDetail }).data ?? null;
 
       if (d && typeof d?.id === "number") {
         setDetail(d);
@@ -141,8 +150,8 @@ export default function StaffOrder() {
         setDetail(null);
         setDetailError("Order detail response is invalid");
       }
-    } catch (e: any) {
-      setDetailError(e?.response?.data?.message || e?.message || "Load order detail failed");
+    } catch (e: unknown) {
+      setDetailError(getErrorMessage(e, "Load order detail failed"));
       setDetail(null);
     } finally {
       setDetailLoading(false);
@@ -214,7 +223,7 @@ export default function StaffOrder() {
 
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "ALL")}
               className="px-4 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
             >
               <option value="ALL">All Status</option>

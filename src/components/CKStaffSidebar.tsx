@@ -13,7 +13,7 @@ const menu = [
 ];
 
 export default function CKStaffSidebar() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   return (
     <aside className="h-full w-[260px] bg-zinc-900 text-zinc-200 flex flex-col justify-between">

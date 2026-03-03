@@ -1,40 +1,57 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import goodsReceiptApi from "../../../api/goodsReceiptApi";
-import  productApi  from "../../../api/productApi";
+import goodsReceiptApi, {
+  type GoodsReceiptRow,
+  type GoodsReceiptDetail,
+} from "../../../api/goodsReceiptApi";
+import productApi, { type ProductItem, type ProductListResponse } from "../../../api/productApi";
 
-function normStatus(s: any) {
+function normStatus(s: unknown) {
   return String(s ?? "").toUpperCase().trim();
 }
 
-function toNum(v: any, fallback = 0) {
+function toNum(v: unknown, fallback = 0) {
   const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : fallback;
+  return typeof n === "number" && Number.isFinite(n) ? n : fallback;
 }
 
 export default function FRStaffGoodsReceipt() {
   const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<GoodsReceiptRow[]>([]);
 
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [open, setOpen] = useState(false);
-  const [detail, setDetail] = useState<any>(null);
+  const [detail, setDetail] = useState<GoodsReceiptDetail | null>(null);
 
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
   const productMap = useMemo(() => {
     const m = new Map<number, string>();
     for (const p of products) m.set(toNum(p?.id, 0), String(p?.name ?? `#${p?.id}`));
     return m;
   }, [products]);
 
+type ErrorShape = {
+  message?: string;
+  response?: { data?: { message?: string } };
+};
+
+function getErrorMessage(e: unknown, fallback: string) {
+  const err = e as ErrorShape;
+  return err?.response?.data?.message || err?.message || fallback;
+}
+
   const refresh = async () => {
     try {
       setLoading(true);
-      const res: any = await goodsReceiptApi.getAll();
-      const list = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : [];
+      const res = await goodsReceiptApi.getAll();
+      const list: GoodsReceiptRow[] = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+        ? (res.data as unknown as GoodsReceiptRow[])
+        : [];
       setRows(list);
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Load goods receipts thất bại");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Load goods receipts thất bại"));
     } finally {
       setLoading(false);
     }
@@ -44,28 +61,30 @@ export default function FRStaffGoodsReceipt() {
     const init = async () => {
       try {
         // load products for showing name in detail items
-        const pRes: any = await productApi.getAll();
-        const pList = Array.isArray(pRes?.data) ? pRes.data : Array.isArray(pRes?.data?.data) ? pRes.data.data : [];
+        const pRes = await productApi.getAll();
+        const pList: ProductItem[] = Array.isArray((pRes as ProductListResponse)?.data)
+          ? ((pRes as ProductListResponse).data as ProductItem[])
+          : [];
         setProducts(pList);
 
         await refresh();
-      } catch (e: any) {
-        toast.error(e?.response?.data?.message || e?.message || "Init thất bại");
+      } catch (e: unknown) {
+        toast.error(getErrorMessage(e, "Init thất bại"));
       }
     };
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  },
+);
 
   const onView = async (id: number) => {
     try {
       setLoadingDetail(true);
-      const res: any = await goodsReceiptApi.getById(id);
-      const d = res?.data?.data ?? res?.data ?? null;
+      const res = await goodsReceiptApi.getById(id);
+      const d = (res?.data?.data ?? res?.data ?? null) as GoodsReceiptDetail | null;
       setDetail(d);
       setOpen(true);
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Load detail thất bại");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Load detail thất bại"));
     } finally {
       setLoadingDetail(false);
     }
@@ -78,8 +97,8 @@ export default function FRStaffGoodsReceipt() {
       setOpen(false);
       setDetail(null);
       await refresh();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Confirm thất bại");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Confirm thất bại"));
     }
   };
 
@@ -134,7 +153,7 @@ export default function FRStaffGoodsReceipt() {
               </thead>
 
               <tbody>
-                {rows.map((r: any) => {
+                {rows.map((r) => {
                   const st = normStatus(r?.status);
                   return (
                     <tr key={r.id}>
@@ -262,7 +281,7 @@ export default function FRStaffGoodsReceipt() {
                         </tr>
                       </thead>
                       <tbody>
-                        {(detail.items ?? []).map((it: any, idx: number) => (
+                        {(detail.items ?? []).map((it, idx: number) => (
                           <tr key={idx}>
                             <td style={{ padding: 10, borderBottom: "1px solid #f1f1f1" }}>
                               {it.product_id} - {productMap.get(toNum(it.product_id, 0)) ?? ""}

@@ -4,14 +4,15 @@ import type { InventoryItem } from "../../../components/CKStaffInventory";
 import inventoryApi from "../../../api/inventoryApi";
 import type { InventoryItemApi, ProductType } from "../../../api/inventoryApi";
 import { categoryApi } from "../../../api/category.api";
+import type { Category } from "../../../types/category.type";
 
 
   
 
 
-function toNumber(v: any) {
+function toNumber(v: string | number | undefined) {
   const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : 0;
+  return typeof n === "number" && Number.isFinite(n) ? n : 0;
 }
 
 function mapInventoryToRow(i: InventoryItemApi, categoryName: string): InventoryItem {
@@ -26,6 +27,20 @@ function mapInventoryToRow(i: InventoryItemApi, categoryName: string): Inventory
     qty,
     status: qty <= 0 ? "Out of stock" : qty <= LOW_STOCK_THRESHOLD ? "Low stock" : "In stock",
   };
+}
+
+type ErrorWithResponseMessage = {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
+function getErrorMessage(e: unknown) {
+  const err = e as ErrorWithResponseMessage;
+  return err?.response?.data?.message || err?.message || "Load inventory failed";
 }
 
 export default function StaffInventory() {
@@ -45,17 +60,13 @@ export default function StaffInventory() {
 
         const inv: InventoryItemApi[] = Array.isArray(invRes?.data) ? invRes.data : [];
 
-        const cats = Array.isArray(catRes?.data?.data)
-          ? catRes.data.data
-          : Array.isArray(catRes?.data)
-          ? catRes.data
-          : [];
+        const cats: Category[] = Array.isArray(catRes?.data?.data) ? catRes.data.data : [];
 
-        const catMap = new Map<number, string>(cats.map((c: any) => [Number(c.id), String(c.name)]));
+        const catMap = new Map<number, string>(cats.map((c) => [Number(c.id), String(c.name)]));
 
         setInventory(inv.map((x) => mapInventoryToRow(x, catMap.get(Number(x.category_id)) || "")));
-      } catch (e: any) {
-        setError(e?.response?.data?.message || e?.message || "Load inventory failed");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e));
         setInventory([]);
       } finally {
         setLoading(false);
@@ -90,7 +101,7 @@ const rawMaterialCount = inventory.filter((i) => i.type === "RAW_MATERIAL").leng
   searchTerm={searchTerm}
   setSearchTerm={setSearchTerm}
   filterType={filterType}
-  setFilterType={setFilterType as any}
+  setFilterType={setFilterType}
   totalItems={totalItems}
   inStockCount={inStockCount}
   lowStockCount={lowStockCount}

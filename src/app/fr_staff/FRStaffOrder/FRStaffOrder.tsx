@@ -32,9 +32,9 @@ type OrderDetail = {
   delivery_date: string;
   status: OrderStatus;
   total_amount: number | string;
-  created_by: any;
-  confirmed_by: any;
-  issued_by: any;
+  created_by: number | null;
+  confirmed_by: number | null;
+  issued_by: number | null;
   items?: OrderItemRow[];
 };
 
@@ -44,9 +44,9 @@ type CreateRow = {
   unit_price: number | "";
 };
 
-function toNumber(v: any) {
+function toNumber(v: string | number | undefined) {
   const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : 0;
+  return typeof n === "number" && Number.isFinite(n) ? n : 0;
 }
 
 function formatMoney(v: string | number) {
@@ -65,16 +65,14 @@ function normStatus(s: OrderStatus) {
   return String(s || "").toUpperCase();
 }
 
-function canConfirm(s: OrderStatus) {
-  return normStatus(s) === "SUBMITTED";
-}
+type ErrorShape = {
+  message?: string;
+  response?: { data?: { message?: string } };
+};
 
-function canIssue(s: OrderStatus) {
-  return normStatus(s) === "CONFIRMED";
-}
-
-function canDeliver(s: OrderStatus) {
-  return normStatus(s) === "ISSUED";
+function getErrorMessage(e: unknown, fallback: string) {
+  const err = e as ErrorShape;
+  return err?.response?.data?.message || err?.message || fallback;
 }
 
 export default function FRStaffOrder() {
@@ -116,8 +114,8 @@ export default function FRStaffOrder() {
     try {
       const o = await orderApi.getAll();
       setOrders(Array.isArray(o?.data) ? o.data : []);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Load orders failed");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Load orders failed"));
       setOrders([]);
     } finally {
       setLoading(false);
@@ -137,8 +135,8 @@ export default function FRStaffOrder() {
   useEffect(() => {
     fetchAll();
     fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  },
+);
 
   const filtered = useMemo(() => {
     const q = (search || "").trim().toLowerCase();
@@ -169,21 +167,6 @@ export default function FRStaffOrder() {
     [orders]
   );
 
-  const onAction = async (fn: () => Promise<any>) => {
-    setError("");
-    setLoading(true);
-    try {
-      await fn();
-      await fetchAll();
-      toast.success("Success");
-    } catch (e: any) {
-      setError(e?.response?.data?.message || e?.message || "Action failed");
-      toast.error(e?.response?.data?.message || e?.message || "Action failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const openOrderDetail = async (orderId: number) => {
     setOpenDetail(true);
     setDetailError("");
@@ -202,7 +185,7 @@ export default function FRStaffOrder() {
       const res = await axiosClient.get<{ data: OrderDetail }>(
         `/orders/${orderId}`
       );
-      const d = (res as any)?.data?.data || (res as any)?.data || null;
+      const d = (res.data as { data?: OrderDetail }).data ?? null;
 
       if (d && typeof d?.id === "number") {
         setDetail(d);
@@ -211,10 +194,8 @@ export default function FRStaffOrder() {
         setDetail(null);
         setDetailError("Order detail response is invalid");
       }
-    } catch (e: any) {
-      setDetailError(
-        e?.response?.data?.message || e?.message || "Load order detail failed"
-      );
+    } catch (e: unknown) {
+      setDetailError(getErrorMessage(e, "Load order detail failed"));
       setDetail(null);
     } finally {
       setDetailLoading(false);
@@ -286,8 +267,8 @@ export default function FRStaffOrder() {
       toast.success("Order created successfully");
       setCreateRows([{ product_id: "", quantity: 1, unit_price: "" }]);
       await fetchAll();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Create order failed");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Create order failed"));
     } finally {
       setCreating(false);
     }
@@ -364,7 +345,7 @@ export default function FRStaffOrder() {
 
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "ALL")}
               className="px-4 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
             >
               <option value="ALL">All Status</option>

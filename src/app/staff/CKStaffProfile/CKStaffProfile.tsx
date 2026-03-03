@@ -73,12 +73,13 @@ const refreshProfile = async () => {
   try {
     setLoadingProfile(true)
 
-    // /auth/me
-   const meRes: any = await axiosClient.get("/auth/me")
+
+   const meRes = await axiosClient.get("/auth/me")
+const meRaw = (meRes as { data?: unknown }).data as unknown
 const meObj =
-  meRes?.data?.data ??
-  meRes?.data?.user ??
-  meRes?.data ??
+  ((meRaw as { data?: MeUser }).data) ??
+  ((meRaw as { user?: MeUser }).user) ??
+  (meRaw as MeUser | null) ??
   null
 
 console.log("AUTH_ME_RAW:", meRes?.data)
@@ -86,10 +87,13 @@ console.log("AUTH_ME_OBJ:", meObj)
 
 setUser(meObj)
 
-    // /stores/me
     try {
-      const sRes: any = await axiosClient.get("/stores/me")
-const sObj = sRes?.data?.data ?? sRes?.data ?? null
+      const sRes = await axiosClient.get("/stores/me")
+const sRaw = (sRes as { data?: unknown }).data as unknown
+const sObj =
+  ((sRaw as { data?: StoreMe }).data) ??
+  (sRaw as StoreMe | null) ??
+  null
 
 console.log("STORES_ME_RAW:", sRes?.data)
 console.log("STORES_ME_OBJ:", sObj)
@@ -98,8 +102,9 @@ setStore(sObj)
     } catch {
       setStore(null)
     }
-  } catch (err: any) {
-    setMsg("❌ " + (err?.response?.data?.message || err?.message || "Failed to load profile"))
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } }; message?: string }
+    setMsg("❌ " + (e?.response?.data?.message || e?.message || "Failed to load profile"))
   } finally {
     setLoadingProfile(false)
   }
@@ -153,13 +158,14 @@ useEffect(() => {
         localStorage.removeItem("accessToken")
         navigate("/login")
       }, 1200)
-    } catch (err: any) {
-      const status = err?.response?.status
-      const data = err?.response?.data
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { message?: string; error?: string } }; message?: string }
+      const status = e?.response?.status
+      const data = e?.response?.data
       const serverMsg =
         data?.message ||
         data?.error ||
-        err?.message ||
+        e?.message ||
         "Internal server error"
 
       setMsg(`❌ (${status || "?"}) ${String(serverMsg)}`)

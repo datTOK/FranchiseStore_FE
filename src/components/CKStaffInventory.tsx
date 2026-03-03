@@ -1,4 +1,5 @@
 import React from "react";
+import type { ProductType } from "../api/inventoryApi";
 
 export type InventoryItem = {
   id: number;
@@ -18,8 +19,8 @@ type Props = {
  
   searchTerm: string;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
-  filterType: any;
-  setFilterType: React.Dispatch<React.SetStateAction<any>>;
+  filterType: ProductType | "All";
+  setFilterType: React.Dispatch<React.SetStateAction<ProductType | "All">>;
   totalItems: number;
   inStockCount: number;
 lowStockCount: number;
@@ -86,7 +87,7 @@ rawMaterialCount,
 
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => setFilterType(e.target.value as ProductType | "All")}
             style={{
               height: 40,
               padding: "0 12px",

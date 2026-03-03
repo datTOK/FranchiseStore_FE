@@ -4,13 +4,19 @@ import axiosClient from "./../api/axiosClient"
 import { doLogout } from "../app/auth/logout";
 export default function FRStaffHeader() {
   const navigate = useNavigate();
-  const [me, setMe] = useState<any>(null)
+  type Me = { id?: number; name?: string; role?: string; username?: string }
+  const [me, setMe] = useState<Me | null>(null)
 
 useEffect(() => {
   const fetchMe = async () => {
     try {
-      const res: any = await axiosClient.get("/auth/me")
-      const user = res?.data?.data ?? res?.data ?? null
+      const res = await axiosClient.get("/auth/me")
+      const outer = (res as { data?: unknown }).data as unknown
+      const user =
+        ((outer as { data?: Me }).data) ??
+        ((outer as { user?: Me }).user) ??
+        (outer as Me | null) ??
+        null
       setMe(user)
     } catch {
       setMe(null)

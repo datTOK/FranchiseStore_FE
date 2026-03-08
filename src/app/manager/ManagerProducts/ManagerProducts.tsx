@@ -190,8 +190,17 @@ export default function ManagerProducts() {
             <tbody>
               {products.map((product) => (
                 <tr key={product.id} className="border-t hover:bg-gray-50">
-                  <td className="px-6 py-4 font-semibold">
-                    {product.name}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={product.image_url || 'https://via.placeholder.com/50'}
+                        alt={product.name}
+                        className="w-12 h-12 rounded-lg object-cover border"
+                      />
+                      <span className="font-semibold text-gray-800">
+                        {product.name}
+                      </span>
+                    </div>
                   </td>
 
                   <td className="px-6 py-4 text-gray-600">
@@ -327,8 +336,8 @@ export default function ManagerProducts() {
                     ? 'Updating...'
                     : 'Update'
                   : creating
-                  ? 'Creating...'
-                  : 'Create'}
+                    ? 'Creating...'
+                    : 'Create'}
               </button>
             </div>
           </div>

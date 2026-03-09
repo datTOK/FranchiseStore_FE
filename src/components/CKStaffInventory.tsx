@@ -1,5 +1,5 @@
 import React from "react";
-import type { ProductType } from "../api/inventoryApi";
+
 
 export type InventoryItem = {
   id: number;
@@ -15,46 +15,26 @@ export type InventoryItem = {
 
 type Props = {
   inventory: InventoryItem[];
-  
- 
   searchTerm: string;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
-  filterType: ProductType | "All";
-  setFilterType: React.Dispatch<React.SetStateAction<ProductType | "All">>;
   totalItems: number;
   inStockCount: number;
-lowStockCount: number;
-outOfStockCount: number;
-rawMaterialCount: number;
+  lowStockCount: number;
+  outOfStockCount: number;
 };
 
-function getTypeLabel(type: string) {
-  switch (type) {
-    case "FINISHED":
-      return "Finished Product";
-    case "RAW_MATERIAL":
-      return "Raw Material";
-    case "SEMI_FINISHED":
-      return "Semi-Finished Product";
-    default:
-      return type;
-  }
-}
+
 
 export default function StaffInventoryTable(props: Props) {
   const {
-    inventory,
-    
-    searchTerm,
-    setSearchTerm,
-    filterType,
-    setFilterType,
-    totalItems,
-inStockCount,
-lowStockCount,
-outOfStockCount,
-rawMaterialCount,
-  } = props;
+  inventory,
+  searchTerm,
+  setSearchTerm,
+  totalItems,
+  inStockCount,
+  lowStockCount,
+  outOfStockCount,
+} = props;
 
   return (
     <div style={{ padding: 24 }}>
@@ -63,7 +43,7 @@ rawMaterialCount,
 <Card title="In stock" value={inStockCount} sub="Qty > 10" />
 <Card title="Low stock" value={lowStockCount} sub="Qty 1 - 10" />
 <Card title="Out of stock" value={outOfStockCount} sub="Qty = 0" />
-<Card title="Raw Material" value={rawMaterialCount} sub="Number of raw materials" />
+
       </div>
 
       <div style={{ background: "#fff", borderRadius: 12, padding: 16 }}>
@@ -85,22 +65,7 @@ rawMaterialCount,
             }}
           />
 
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value as ProductType | "All")}
-            style={{
-              height: 40,
-              padding: "0 12px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              minWidth: 180,
-            }}
-          >
-            <option value="All">All Types</option>
-            <option value="RAW_MATERIAL">Raw Material</option>
-            <option value="SEMI_FINISHED">Semi-Finished Product</option>
-            <option value="FINISHED">Finished Product</option>
-          </select>
+          
         </div>
 
         
@@ -110,7 +75,7 @@ rawMaterialCount,
                 <tr style={{ background: "#f6f7fb" }}>
                   <Th>ID</Th>
                   <Th>SKU & Name</Th>
-                  <Th>Type</Th>
+                  
                   <Th>category_name</Th>
                   <Th>Qty</Th>
                   <Th>Status</Th>
@@ -125,7 +90,7 @@ rawMaterialCount,
                       <div style={{ fontWeight: 600 }}>{x.name}</div>
                       <div style={{ fontSize: 12, opacity: 0.7 }}>{x.sku}</div>
                     </Td>
-                    <Td>{getTypeLabel(x.type)}</Td>
+                    
                     <Td>{x.category_name}</Td>
                     <Td>{x.qty}</Td>
                     <Td>
@@ -165,7 +130,7 @@ rawMaterialCount,
 
                 {inventory.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{ padding: 16, opacity: 0.7 }}>
+                    <td colSpan={6} style={{ padding: 16, opacity: 0.7 }}>
                       No data
                     </td>
                   </tr>

@@ -1,13 +1,26 @@
-import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User, PackageOpen } from "lucide-react";
-import { NavLink } from "react-router-dom";
+
+import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User, PackageOpen, ReceiptText, Boxes, Factory,  } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+
 import { ClipboardCheck } from "lucide-react";
 import { doLogout } from "../app/auth/logout";
 
 const menu = [
   { label: "Dashboard", path: "/ck-staff/dashboard", icon: LayoutDashboard },
-  { label: "Inventory", path: "/ck-staff/inventory", icon: CirclePile },
+  { label: "Inventory Product", path: "/ck-staff/inventory", icon: CirclePile },
+  { label: "Inventory Material", path: "/ck-staff/material-inventory", icon: Boxes },
   { label: "Orders", path: "/ck-staff/orders", icon: NotepadText },
   { label: "Reservations", path: "/ck-staff/reservations", icon: ClipboardCheck },
+  {
+    label: "Production Orders",
+    path: "/ck-staff/production-orders",
+    icon: Factory,
+  },
+  {
+    label: "Goods Receipt Material",
+    path: "/ck-staff/goods-receipt-materials",
+    icon: ReceiptText,
+  },
   { label: "Goods Issue", path: "/ck-staff/goods-issues", icon: PackageOpen },
   { label: "Profile", path: "/ck-staff/profile", icon: User },
 ];

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import StaffInventoryTable from "../../../components/CKStaffInventory";
 import type { InventoryItem } from "../../../components/CKStaffInventory";
 import inventoryApi from "../../../api/inventoryApi";
-import type { InventoryItemApi, ProductType } from "../../../api/inventoryApi";
+import type { InventoryItemApi } from "../../../api/inventoryApi";
 import { categoryApi } from "../../../api/category.api";
 import type { Category } from "../../../types/category.type";
 
@@ -47,7 +47,7 @@ export default function StaffInventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
  
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<ProductType | "All">("All");
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -77,19 +77,17 @@ export default function StaffInventory() {
   }, []);
 
   const filteredInventory = useMemo(() => {
-    const s = searchTerm.trim().toLowerCase();
-    return inventory.filter((item) => {
-      const matchesSearch = !s || item.name.toLowerCase().includes(s) || item.sku.toLowerCase().includes(s);
-      const matchesType = filterType === "All" || item.type === filterType;
-      return matchesSearch && matchesType;
-    });
-  }, [inventory, searchTerm, filterType]);
+  const s = searchTerm.trim().toLowerCase();
+  return inventory.filter((item) => {
+    return !s || item.name.toLowerCase().includes(s) || item.sku.toLowerCase().includes(s);
+  });
+}, [inventory, searchTerm]);
 
   const totalItems = inventory.length;
   const inStockCount = inventory.filter((i) => i.status === "In stock").length;
 const lowStockCount = inventory.filter((i) => i.status === "Low stock").length;
 const outOfStockCount = inventory.filter((i) => i.status === "Out of stock").length;
-const rawMaterialCount = inventory.filter((i) => i.type === "RAW_MATERIAL").length;
+
 
   return (
     <div>
@@ -97,17 +95,14 @@ const rawMaterialCount = inventory.filter((i) => i.type === "RAW_MATERIAL").leng
       {error ? <div style={{ padding: 12, color: "red" }}>{error}</div> : null}
 
       <StaffInventoryTable
-        inventory={filteredInventory}
+  inventory={filteredInventory}
   searchTerm={searchTerm}
   setSearchTerm={setSearchTerm}
-  filterType={filterType}
-  setFilterType={setFilterType}
   totalItems={totalItems}
   inStockCount={inStockCount}
   lowStockCount={lowStockCount}
   outOfStockCount={outOfStockCount}
-  rawMaterialCount={rawMaterialCount}
-      />
+/>
     </div>
   );
 }

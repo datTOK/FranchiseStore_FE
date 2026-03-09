@@ -15,6 +15,8 @@ import CKStaffProfile from "./staff/CKStaffProfile/CKStaffProfile";
 import CKStaffReservations from "./staff/CKStaffReservations/CKStaffReservations";
 import CKStaffGoodsIssue from "./staff/CKStaffGoodsIssue/CKStaffGoodsIssue";
 import CKStaffGoodsReceiptMaterial from "./staff/CKStaffGoodsReceiptMaterial/CKStaffGoodsReceiptMaterial";
+import CKStaffMaterialInventory from "./staff/CKStaffMaterialInventory/CKStaffMaterialInventory";
+import CKStaffProductionOrders from "./staff/CKStaffProductionOrders/CKStaffProductionOrders";
 
 // FR Staff (Franchise Store Staff)
 import FRStaffLayout from "./fr_staff/FRStaffLayout";
@@ -37,8 +39,13 @@ import Store from "./admin/Store/Store";
 import ManagerCategory from "./manager/ManagerCategory/ManagerCategory";
 import ManagerProducts from "./manager/ManagerProducts/ManagerProducts";
 import ManagerProfile from "./manager/ManagerProfile/ManagerProfile";
-import CKStaffMaterialInventory from "./staff/CKStaffMaterialInventory/CKStaffMaterialInventory";
-import CKStaffProductionOrders from "./staff/CKStaffProductionOrders/CKStaffProductionOrders";
+
+
+
+import ManagerMaterials from "./manager/ManagerMaterials/ManagerMaterials";
+import ManagerProductRecipe from "./manager/ManagerProductRecipe/ManagerProductRecipe";
+import CreateProductRecipe from "./manager/ManagerProductRecipe/CreateProductRecipe";
+
 
 export default function App() {
   return (
@@ -100,6 +107,9 @@ export default function App() {
       <Route path="dashboard" element={<ManagerDashboard />} />
       <Route path="category" element={<ManagerCategory />} />
       <Route path="products" element={<ManagerProducts />} />
+      <Route path="product-recipes" element={<ManagerProductRecipe />} />
+      <Route path="product-recipes/create" element={<CreateProductRecipe />} />
+      <Route path="materials" element={<ManagerMaterials />} />
       <Route path="profile" element={<ManagerProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import reservationApi from "../../../api/reservationApi";
-import orderApi from "../../../api/orderApi";
+
 import productApi, { type ProductItem } from "../../../api/productApi";
-import type { OrderRow } from "../../../api/orderApi";
+
 import type { CreateReservationPayload, ReservationItemInput } from "../../../api/reservationApi";
 
 type ReservationItemRow = {
@@ -14,7 +14,7 @@ type ReservationItemRow = {
 type LastCreatedInfo = {
   reservation_id: number;
   createdAt: string;
-  order_id?: number;
+
   items: Array<{
     product_id: number;
     product_name: string;
@@ -34,7 +34,7 @@ function getProductName(p: ProductItem, fallbackId: number) {
 
 export default function CKStaffReservations() {
   // create form
-  const [orderId, setOrderId] = useState<string>("");
+
   const [items, setItems] = useState<ReservationItemRow[]>([
     { product_id: 0, quantity: 1 },
   ]);
@@ -44,7 +44,7 @@ export default function CKStaffReservations() {
   const [loadingComplete, setLoadingComplete] = useState(false);
 
   // dropdown data
-  const [orders, setOrders] = useState<OrderRow[]>([]);
+ 
   const [products, setProducts] = useState<ProductItem[]>([]);
 
   // show result after create
@@ -62,10 +62,7 @@ export default function CKStaffReservations() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // orders
-        const oRes = await orderApi.getAll();
-        const oList = Array.isArray((oRes as { data?: OrderRow[] })?.data) ? ((oRes as { data?: OrderRow[] }).data as OrderRow[]) : [];
-        setOrders(oList);
+        
 
         // products
         const pRes = await productApi.getAll();
@@ -73,7 +70,7 @@ export default function CKStaffReservations() {
         setProducts(pList);
       } catch (e: unknown) {
         const err = e as { response?: { data?: { message?: string } }; message?: string };
-        toast.error(err?.response?.data?.message || err?.message || "Load orders/products thất bại");
+        toast.error(err?.response?.data?.message || err?.message || "Load products thất bại");
       }
     };
 
@@ -99,8 +96,6 @@ export default function CKStaffReservations() {
     }
 
     const payload: CreateReservationPayload = { items: cleaned as ReservationItemInput[] };
-    const oid = toNum(orderId, 0);
-    if (orderId.trim() !== "" && oid > 0) payload.order_id = oid;
 
     try {
       setLoadingCreate(true);
@@ -130,7 +125,7 @@ export default function CKStaffReservations() {
       setLastCreated({
         reservation_id: Number(reservationId),
         createdAt: new Date().toLocaleString(),
-        order_id: payload.order_id,
+        
         items: cleaned.map((it) => ({
           product_id: it.product_id,
           product_name: productMap.get(it.product_id) || `Product ${it.product_id}`,
@@ -139,7 +134,7 @@ export default function CKStaffReservations() {
       });
 
       // reset form
-      setOrderId("");
+      
       setItems([{ product_id: 0, quantity: 1 }]);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } }; message?: string };
@@ -193,31 +188,7 @@ export default function CKStaffReservations() {
           >
             <div style={{ fontWeight: 800, marginBottom: 10 }}>Create Reservation</div>
 
-            <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>
-              
-            </div>
-
-            <select
-              value={orderId}
-              onChange={(e) => setOrderId(e.target.value)}
-              style={{
-                height: 42,
-                width: "100%",
-                maxWidth: 520,
-                padding: "0 12px",
-                borderRadius: 12,
-                border: "1px solid #ddd",
-                background: "#fff",
-                marginBottom: 14,
-              }}
-            >
-              <option value="">(Select order)</option>
-              {orders.map((o) => (
-                <option key={o.id} value={String(o.id)}>
-                  {o.id} - {o.order_code}
-                </option>
-              ))}
-            </select>
+            
 
             <div style={{ fontWeight: 700, marginBottom: 8 }}>Items</div>
 
@@ -334,13 +305,7 @@ export default function CKStaffReservations() {
                   Tạo lúc: {lastCreated.createdAt}
                 </div>
 
-                <div style={{ marginBottom: 10 }}>
-                  <b>Order ID:</b>{" "}
-                  {typeof lastCreated.order_id === "number"
-                    ? lastCreated.order_id
-                    : "(Sản xuất tồn - không gắn order)"}
-                </div>
-
+                
                 <div style={{ overflowX: "auto" }}>
                   <table
                     style={{

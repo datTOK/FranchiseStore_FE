@@ -3,6 +3,8 @@ import { ClipboardList, CheckCircle2, Truck, Hourglass, RefreshCw, Eye } from "l
 import Card from "../../../components/Card";
 import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
+import { storeApi } from "../../../api/store.api";
+import type { Store } from "../../../types/store.type";
 
 type OrderItemRow = {
   order_item_id: number;
@@ -68,6 +70,8 @@ export default function StaffOrder() {
   const [error, setError] = useState("");
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [storeNames, setStoreNames] = useState<Record<number, string>>({});
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
@@ -81,31 +85,47 @@ export default function StaffOrder() {
   const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>({});
 
   const fetchAll = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const o = await orderApi.getAll();
-      setOrders(Array.isArray(o?.data) ? o.data : []);
-    } catch (e: unknown) {
-      setError(getErrorMessage(e, "Load orders failed"));
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setError("");
+  setLoading(true);
+
+  try {
+    const [orderRes, storeRes] = await Promise.all([
+      orderApi.getAll(),
+      storeApi.getAll(),
+    ]);
+
+    const orderData = Array.isArray(orderRes?.data) ? orderRes.data : [];
+    const storeData = Array.isArray(storeRes?.data?.data) ? storeRes.data.data : [];
+
+    setOrders(orderData);
+    setStores(storeData);
+  } catch (e: unknown) {
+    setError(getErrorMessage(e, "Load orders failed"));
+    setOrders([]);
+    setStores([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchAll();
   }, []);
 
   const filtered = useMemo(() => {
-    const q = (search || "").trim().toLowerCase();
-    return orders.filter((o) => {
-      const matchSearch = !q || String(o.id).includes(q) || String(o.order_code || "").toLowerCase().includes(q);
-      const matchStatus = statusFilter === "ALL" ? true : normStatus(o.status) === normStatus(statusFilter);
-      return matchSearch && matchStatus;
-    });
-  }, [orders, search, statusFilter]);
+  const q = (search || "").trim().toLowerCase();
+  return orders.filter((o) => {
+    const matchSearch =
+      !q ||
+      String(o.order_code || "").toLowerCase().includes(q) ||
+      getStoreName(o.store_id).toLowerCase().includes(q);
+
+    const matchStatus =
+      statusFilter === "ALL" ? true : normStatus(o.status) === normStatus(statusFilter);
+
+    return matchSearch && matchStatus;
+  });
+}, [orders, stores, search, statusFilter]);
 
   const total = orders.length;
   const pending = useMemo(() => orders.filter((o) => normStatus(o.status) === "SUBMITTED").length, [orders]);
@@ -164,11 +184,15 @@ export default function StaffOrder() {
     setDetailError("");
     setDetailLoading(false);
   };
+  
+  const getStoreName = (storeId: number) => {
+  const found = stores.find((s) => s.id === storeId);
+  return found?.name ?? `Store ${storeId}`;
+};
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-2">Manage Store Orders</h2>
-      <p className="text-gray-600 mb-6">Manage your store's current orders and status</p>
+      
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card
@@ -179,26 +203,26 @@ export default function StaffOrder() {
           icon={<ClipboardList className="w-7 h-7 text-blue-600" />}
         />
         <Card
-          title="Pending"
-          value={pending}
-          subtext="Waiting confirm"
-          borderColor="border-yellow-500"
-          icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
-        />
+  title="Submitted"
+  value={pending}
+  subtext="Waiting for confirmation"
+  borderColor="border-yellow-500"
+  icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
+/>
         <Card
-          title="Issued"
-          value={issued}
-          subtext="On the way"
-          borderColor="border-orange-500"
-          icon={<Truck className="w-7 h-7 text-orange-600" />}
-        />
+  title="Issued"
+  value={issued}
+  subtext="Ready for delivery"
+  borderColor="border-orange-500"
+  icon={<Truck className="w-7 h-7 text-orange-600" />}
+/>
         <Card
-          title="Delivered"
-          value={delivered}
-          subtext="Done"
-          borderColor="border-green-500"
-          icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
-        />
+  title="Delivered"
+  value={delivered}
+  subtext="Completed orders"
+  borderColor="border-green-500"
+  icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
+/>
       </div>
 
       <div className="bg-white/95 rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
@@ -217,7 +241,7 @@ export default function StaffOrder() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search ID, Order code..."
+              placeholder="Search order code, store..."
               className="w-full md:w-[260px] px-4 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
             />
 
@@ -244,29 +268,26 @@ export default function StaffOrder() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-700">
               <tr>
-                <th className="text-left px-4 py-3 whitespace-nowrap">ID</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Order Code</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Store</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Order Date</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Delivery Date</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Actions</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
-              </tr>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Order Code</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Store</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Order Date</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Delivery Date</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">Actions</th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
+</tr>
             </thead>
 
             <tbody>
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t">
-                  <td className="px-4 py-3">{o.id}</td>
-                  <td className="px-4 py-3 font-medium">{o.order_code}</td>
-
-                  <td className="px-4 py-3">{o.store_id}</td>
-                  <td className="px-4 py-3">{formatDate(o.order_date)}</td>
-                  <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
-                  <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
-                  <td className="px-4 py-3">{normStatus(o.status)}</td>
+  <td className="px-4 py-3 font-medium">{o.order_code}</td>
+  <td className="px-4 py-3">{getStoreName(o.store_id)}</td>
+  <td className="px-4 py-3">{formatDate(o.order_date)}</td>
+  <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
+  <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
+  <td className="px-4 py-3">{normStatus(o.status)}</td>
 
                   <td className="px-4 py-3">
   <div className="flex flex-wrap gap-2">
@@ -298,7 +319,7 @@ export default function StaffOrder() {
 
               {!loading && filtered.length === 0 ? (
                 <tr className="border-t">
-                  <td className="px-4 py-6 text-gray-500" colSpan={9}>
+                  <td className="px-4 py-6 text-gray-500" colSpan={8}>
                     No orders
                   </td>
                 </tr>
@@ -330,7 +351,7 @@ export default function StaffOrder() {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <Info label="Order Code" value={detail.order_code} />
-                    <Info label="Store ID" value={String(detail.store_id)} />
+                    <Info label="Store" value={getStoreName(detail.store_id)} />
                     <Info label="Status" value={normStatus(detail.status)} />
                     <Info label="Total Amount" value={formatMoney(detail.total_amount)} />
                     <Info label="Order Date" value={formatDate(detail.order_date)} />

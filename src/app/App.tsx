@@ -12,7 +12,7 @@ import CKStaffDashboard from "./staff/CKStaffDashboard/CKStaffDashboard";
 import CKStaffInventory from "./staff/CKStaffInventory/CKStaffInventory";
 import CKStaffOrder from "./staff/CKStaffOrder/CKStaffOrder";
 import CKStaffProfile from "./staff/CKStaffProfile/CKStaffProfile";
-import CKStaffReservations from "./staff/CKStaffReservations/CKStaffReservations";
+
 import CKStaffGoodsIssue from "./staff/CKStaffGoodsIssue/CKStaffGoodsIssue";
 import CKStaffGoodsReceiptMaterial from "./staff/CKStaffGoodsReceiptMaterial/CKStaffGoodsReceiptMaterial";
 import CKStaffMaterialInventory from "./staff/CKStaffMaterialInventory/CKStaffMaterialInventory";
@@ -72,7 +72,7 @@ export default function App() {
       <Route path="inventory" element={<CKStaffInventory />} />
       <Route path="material-inventory" element={<CKStaffMaterialInventory />} />
       <Route path="orders" element={<CKStaffOrder />} />
-      <Route path="reservations" element={<CKStaffReservations />} />
+     
       <Route path="production-orders" element={<CKStaffProductionOrders />} />
       <Route path="goods-receipt-materials" element={<CKStaffGoodsReceiptMaterial />} />
       <Route path="goods-issues" element={<CKStaffGoodsIssue />} />

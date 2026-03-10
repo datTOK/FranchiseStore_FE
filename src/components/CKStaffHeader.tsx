@@ -59,7 +59,7 @@ useEffect(() => {
             
             <button
               type="button"
-              onClick={() => navigate('/staff/profile')}
+              onClick={() => navigate('/ck-staff/profile')}
               className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
             >
               Profile

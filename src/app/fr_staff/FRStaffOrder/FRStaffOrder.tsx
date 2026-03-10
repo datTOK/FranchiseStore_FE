@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ClipboardList,
   CheckCircle2,
@@ -89,9 +89,10 @@ export default function FRStaffOrder() {
   const [creating, setCreating] = useState(false);
 
   // List
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [orders, setOrders] = useState<OrderRow[]>([]);
+ const [loading, setLoading] = useState(true);
+const [refreshing, setRefreshing] = useState(false);
+const [error, setError] = useState("");
+const [orders, setOrders] = useState<OrderRow[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
 
@@ -108,35 +109,44 @@ export default function FRStaffOrder() {
     {}
   );
 
-  const fetchAll = async () => {
-    setError("");
+  const fetchAll = useCallback(async (showRefreshing = false) => {
+  setError("");
+
+  if (showRefreshing) {
+    setRefreshing(true);
+  } else {
     setLoading(true);
-    try {
-      const o = await orderApi.getAll();
-      setOrders(Array.isArray(o?.data) ? o.data : []);
-    } catch (e: unknown) {
-      setError(getErrorMessage(e, "Load orders failed"));
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
+  }
+
+  try {
+    const o = await orderApi.getAll();
+    setOrders(Array.isArray(o?.data) ? o.data : []);
+  } catch (e: unknown) {
+    setError(getErrorMessage(e, "Load orders failed"));
+    setOrders([]);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+}, []);
+
+const fetchProducts = useCallback(async () => {
+  try {
+    const res = await productApi.getAll();
+    setProducts(Array.isArray(res?.data) ? res.data : []);
+  } catch (e) {
+    console.error(e);
+    setProducts([]);
+  }
+}, []);
+
+useEffect(() => {
+  const init = async () => {
+    await Promise.all([fetchAll(false), fetchProducts()]);
   };
 
-  const fetchProducts = async () => {
-    try {
-      const res = await productApi.getAll();
-      setProducts(Array.isArray(res?.data) ? res.data : []);
-    } catch (e) {
-      console.error(e);
-      setProducts([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchAll();
-    fetchProducts();
-  },
-);
+  void init();
+}, [fetchAll, fetchProducts]);
 
   const filtered = useMemo(() => {
     const q = (search || "").trim().toLowerCase();
@@ -263,10 +273,11 @@ export default function FRStaffOrder() {
 
     setCreating(true);
     try {
-      await orderApi.create({ delivery_date, items });
-      toast.success("Order created successfully");
-      setCreateRows([{ product_id: "", quantity: 1, unit_price: "" }]);
-      await fetchAll();
+     await orderApi.create({ delivery_date, items });
+toast.success("Order created successfully");
+setCreateRows([{ product_id: "", quantity: 1, unit_price: "" }]);
+setOpenCreate(false);
+await fetchAll(true);
     } catch (e: unknown) {
       toast.error(getErrorMessage(e, "Create order failed"));
     } finally {
@@ -329,12 +340,13 @@ export default function FRStaffOrder() {
             </button>
 
             <button
-              onClick={fetchAll}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </button>
+  onClick={() => fetchAll(true)}
+  disabled={refreshing}
+  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+>
+  <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+  {refreshing ? "Refreshing..." : "Refresh"}
+</button>
 
             <input
               value={search}
@@ -596,10 +608,7 @@ export default function FRStaffOrder() {
                   <button
                     type="button"
                     disabled={creating}
-                    onClick={async () => {
-                      await submitCreate();
-                      setOpenCreate(false);
-                    }}
+                    onClick={submitCreate}
                     className={[
                       "inline-flex items-center justify-center px-5 py-2 rounded-xl text-white",
                       creating ? "bg-orange-300" : "bg-orange-500 hover:bg-orange-600",

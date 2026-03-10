@@ -2,7 +2,7 @@
 import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User, PackageOpen, ReceiptText, Boxes, Factory,  } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
-import { ClipboardCheck } from "lucide-react";
+
 import { doLogout } from "../app/auth/logout";
 
 const menu = [
@@ -10,7 +10,7 @@ const menu = [
   { label: "Inventory Product", path: "/ck-staff/inventory", icon: CirclePile },
   { label: "Inventory Material", path: "/ck-staff/material-inventory", icon: Boxes },
   { label: "Orders", path: "/ck-staff/orders", icon: NotepadText },
-  { label: "Reservations", path: "/ck-staff/reservations", icon: ClipboardCheck },
+  
   {
     label: "Production Orders",
     path: "/ck-staff/production-orders",
@@ -22,7 +22,7 @@ const menu = [
     icon: ReceiptText,
   },
   { label: "Goods Issue", path: "/ck-staff/goods-issues", icon: PackageOpen },
-  { label: "Profile", path: "/ck-staff/profile", icon: User },
+  
 ];
 
 export default function CKStaffSidebar() {

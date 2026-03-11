@@ -33,12 +33,12 @@ export default function CKStaffLayout() {
   return (
     <div className="min-h-screen w-full bg-transparent">
       {/* Sidebar fixed */}
-      <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-40">
-        <CKStaffSidebar />
-      </div>
+      <div id="ckstaff-sidebar" className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-40">
+  <CKStaffSidebar />
+</div>
 
       {/* Content area (chừa chỗ sidebar) */}
-      <div className="ml-0 md:ml-[260px] min-h-screen relative">
+      <div id="ckstaff-content-shell" className="ml-0 md:ml-[260px] min-h-screen relative">
         
 
         <div className="relative flex min-h-screen flex-col">
@@ -48,7 +48,7 @@ export default function CKStaffLayout() {
           </div>
 
           {/* Chỉ main cuộn */}
-          <main className="relative flex-1 overflow-y-auto p-6">
+          <main id="ckstaff-main" className="relative flex-1 overflow-y-auto p-6">
             {/* Background */}
 <div
   className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"

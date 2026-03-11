@@ -1,5 +1,5 @@
 
-import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, User, PackageOpen, ReceiptText, Boxes, Factory,  } from "lucide-react";
+import { ChefHat, CirclePile, LayoutDashboard, LogOut, NotepadText, PackageOpen, ReceiptText, Boxes, Factory,  } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 

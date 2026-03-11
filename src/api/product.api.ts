@@ -14,4 +14,6 @@ export const productApi = {
   deleteProduct: (id: number) => {
     return axiosClient.delete(`/products/${id}`)
   },
+  setUnitPrice: (id: number, payload: { unit_price: number }) =>
+    axiosClient.patch(`/products/${id}/set-unit-price`, payload),
 }

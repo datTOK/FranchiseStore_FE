@@ -2,10 +2,12 @@ export interface Product {
   id: number
   category_id: number
   category_name: string
+  recipe_id: number
   name: string
   sku: string
   image_url: string | null
   uom: string
+  unit_price: string
   product_type: 'FINISHED' | 'RAW_MATERIAL'
   is_active: number
   created_at: string
@@ -33,4 +35,8 @@ export interface UpdateProductPayload {
   uom: string
   product_type: 'FINISHED' | 'RAW_MATERIAL'
   is_active: boolean
+}
+
+export interface SetUnitPricePayload {
+  unit_price: number
 }

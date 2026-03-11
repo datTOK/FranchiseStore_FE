@@ -28,6 +28,11 @@ export default function ManagerProducts() {
     product_type: 'FINISHED',
   })
 
+  const [priceModal, setPriceModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [unitPrice, setUnitPrice] = useState("")
+  const [settingPrice, setSettingPrice] = useState(false)
+
   const fetchProducts = async () => {
     try {
       setLoading(true)
@@ -145,6 +150,37 @@ export default function ManagerProducts() {
     }
   }
 
+  const openPriceModal = (product: Product) => {
+    setSelectedProduct(product)
+    setUnitPrice("")
+    setPriceModal(true)
+  }
+
+  const handleSetPrice = async () => {
+    if (!selectedProduct || Number(unitPrice) <= 0) {
+      toast.error("Please enter a valid price")
+      return
+    }
+
+    try {
+      setSettingPrice(true)
+
+      await productApi.setUnitPrice(selectedProduct.id, {
+        unit_price: Number(unitPrice),
+      })
+
+      toast.success("Price updated successfully")
+
+      setPriceModal(false)
+      fetchProducts()
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to set price")
+    } finally {
+      setSettingPrice(false)
+    }
+  }
+
   if (loading) return <LoadingLottie />
   if (error) return <div className="p-6 text-red-500">{error}</div>
 
@@ -180,7 +216,7 @@ export default function ManagerProducts() {
                 <th className="px-6 py-4 text-left">Product</th>
                 <th className="px-6 py-4 text-left">Category</th>
                 <th className="px-6 py-4 text-left">SKU</th>
-                <th className="px-6 py-4 text-center">Type</th>
+                <th className="px-6 py-4 text-center">Unit Price</th>
                 <th className="px-6 py-4 text-center">UOM</th>
                 <th className="px-6 py-4 text-center">Status</th>
                 <th className="px-6 py-4 text-center">Actions</th>
@@ -212,7 +248,7 @@ export default function ManagerProducts() {
                   </td>
 
                   <td className="px-6 py-4 text-center">
-                    {product.product_type}
+                    {product.unit_price ? parseFloat(product.unit_price) : 'N/A'}
                   </td>
 
                   <td className="px-6 py-4 text-center">
@@ -237,6 +273,12 @@ export default function ManagerProducts() {
                       className="px-3 py-1 text-xs bg-red-100 text-red-600 rounded-lg disabled:opacity-50"
                     >
                       {deletingId === product.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                    <button
+                      onClick={() => openPriceModal(product)}
+                      className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-lg"
+                    >
+                      Set Price
                     </button>
                   </td>
                 </tr>
@@ -339,6 +381,49 @@ export default function ManagerProducts() {
                     ? 'Creating...'
                     : 'Create'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {priceModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+
+            <h3 className="text-xl font-semibold mb-4">
+              Set Product Price
+            </h3>
+
+            <p className="text-sm text-gray-500 mb-4">
+              Product: <strong>{selectedProduct.name}</strong>
+            </p>
+
+            <input
+              type="number"
+              placeholder="Unit Price"
+              min={0}
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+            />
+
+            <div className="flex justify-end gap-3 mt-6">
+
+              <button
+                onClick={() => setPriceModal(false)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSetPrice}
+                disabled={settingPrice}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50"
+              >
+                {settingPrice ? "Saving..." : "Set Price"}
+              </button>
+
             </div>
           </div>
         </div>

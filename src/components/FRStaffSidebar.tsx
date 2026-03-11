@@ -8,6 +8,7 @@ const menu = [
   { label: "Inventory Product", path: "/fr-staff/inventory", icon: CirclePile },
   { label: "Orders", path: "/fr-staff/orders", icon: NotepadText },
   { label: "Goods Receipt", path: "/fr-staff/goods-receipts", icon: PackageCheck },
+  { label: "POS (Sales)", path: "/fr-staff/pos", icon: NotepadText },
   { label: "Profile", path: "/fr-staff/profile", icon: User },
 ];
 

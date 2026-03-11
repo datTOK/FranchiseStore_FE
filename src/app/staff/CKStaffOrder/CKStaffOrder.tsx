@@ -71,7 +71,6 @@ export default function StaffOrder() {
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
-  const [storeNames, setStoreNames] = useState<Record<number, string>>({});
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");

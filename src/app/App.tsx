@@ -25,6 +25,7 @@ import FRStaffInventory from "./fr_staff/FRStaffInventory/FRStaffInventory";
 import FRStaffOrder from "./fr_staff/FRStaffOrder/FRStaffOrder";
 import FRStaffGoodsReceipt from "./fr_staff/FRStaffGoodsReceipt/FRStaffGoodsReceipt";
 import FRStaffProfile from "./fr_staff/FRStaffProfile/FRStaffProfile";
+import FRStaffPOSPage from "./fr_staff/FRStaffPOS/FRStaffPOS";
 import CentralKitchenLayout from "./central_kitchen/CentralKitchenLayout";
 import KitchenDashboard from "./central_kitchen/KitchenDashboard/KitchenDashboard";
 import ManagerDashboard from "./manager/ManagerDashboard/ManagerDashboard";
@@ -87,6 +88,7 @@ export default function App() {
       <Route path="inventory" element={<FRStaffInventory />} />
       <Route path="orders" element={<FRStaffOrder />} />
       <Route path="goods-receipts" element={<FRStaffGoodsReceipt />} />
+      <Route path="pos" element={<FRStaffPOSPage />} />
       <Route path="profile" element={<FRStaffProfile />} />
       <Route index element={<Navigate to="dashboard" replace />} />
     </Route>

@@ -205,7 +205,7 @@ export default function ManagerProductRecipe() {
                                             </div>
 
                                             <div className="text-gray-600">
-                                                {ingredient.quantity}{" "}
+                                                {parseFloat(ingredient.quantity)}{" "}
                                                 {ingredient.quantity_unit}
                                             </div>
                                         </div>

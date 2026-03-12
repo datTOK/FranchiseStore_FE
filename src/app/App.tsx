@@ -46,6 +46,7 @@ import ManagerProfile from "./manager/ManagerProfile/ManagerProfile";
 import ManagerMaterials from "./manager/ManagerMaterials/ManagerMaterials";
 import ManagerProductRecipe from "./manager/ManagerProductRecipe/ManagerProductRecipe";
 import CreateProductRecipe from "./manager/ManagerProductRecipe/CreateProductRecipe";
+import ManagerMaterialBatches from "./manager/ManagerBatches/ManagerBatches";
 
 
 export default function App() {
@@ -108,6 +109,7 @@ export default function App() {
     <Route path="/manager" element={<ManagerLayout />}>
       <Route path="dashboard" element={<ManagerDashboard />} />
       <Route path="category" element={<ManagerCategory />} />
+      <Route path="batch" element={<ManagerMaterialBatches />} />
       <Route path="products" element={<ManagerProducts />} />
       <Route path="product-recipes" element={<ManagerProductRecipe />} />
       <Route path="product-recipes/create" element={<CreateProductRecipe />} />

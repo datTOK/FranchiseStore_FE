@@ -482,9 +482,9 @@ const closeModalCreate = () => {
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
               <thead>
                 <tr style={{ background: "#fafafa" }}>
-                  <th style={{ textAlign: "left", padding: 12, borderBottom: "1px solid #eee" }}>ID</th>
+                  
                   <th style={{ textAlign: "left", padding: 12, borderBottom: "1px solid #eee" }}>Issue Code</th>
-                  <th style={{ textAlign: "left", padding: 12, borderBottom: "1px solid #eee" }}>Order</th>
+                  
                   <th style={{ textAlign: "left", padding: 12, borderBottom: "1px solid #eee" }}>Store From</th>
                   <th style={{ textAlign: "left", padding: 12, borderBottom: "1px solid #eee" }}>Store To</th>
                   <th style={{ textAlign: "left", padding: 12, borderBottom: "1px solid #eee" }}>Status</th>
@@ -499,15 +499,15 @@ const closeModalCreate = () => {
                   const canComplete = st !== "COMPLETED";
                   return (
                     <tr key={gi.id}>
-                      <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>{gi.id}</td>
+                      
                       <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>{gi.issue_code}</td>
-                      <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>{gi.order_id}</td>
+                      
                       <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>
-                        {gi.store_from} - {storeMap.get(toNum(gi.store_from, 0)) ?? ""}
-                      </td>
-                      <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>
-                        {gi.store_to} - {storeMap.get(toNum(gi.store_to, 0)) ?? ""}
-                      </td>
+  {storeMap.get(toNum(gi.store_from, 0)) ?? ""}
+</td>
+<td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>
+  {storeMap.get(toNum(gi.store_to, 0)) ?? ""}
+</td>
                       <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>{st}</td>
                       <td style={{ padding: 12, borderBottom: "1px solid #f1f1f1" }}>
                         {gi.created_at ? new Date(gi.created_at).toLocaleString() : ""}
@@ -534,7 +534,7 @@ const closeModalCreate = () => {
 
                 {goodsIssues.length === 0 && (
                   <tr>
-                    <td colSpan={8} style={{ padding: 14, textAlign: "center", color: "#777" }}>
+                    <td colSpan={6} style={{ padding: 14, textAlign: "center", color: "#777" }}>
                       No goods issues found.
                     </td>
                   </tr>

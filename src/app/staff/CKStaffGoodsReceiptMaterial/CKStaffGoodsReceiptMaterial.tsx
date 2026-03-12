@@ -12,6 +12,7 @@ import {
 import goodsReceiptMaterialApi, {
   type GoodsReceiptMaterialRow,
   type GoodsReceiptMaterialDetail,
+  type GoodsReceiptMaterialItem,
 } from "../../../api/goodsReceiptMaterialApi";
 
 type ErrorResponse = {
@@ -31,6 +32,14 @@ function formatDate(value?: string): string {
 
   return date.toLocaleString();
 }
+function formatQty(value: number | string | undefined): string {
+  if (value === undefined || value === null || value === "") return "-";
+
+  const num = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(num)) return String(value);
+
+  return Number.isInteger(num) ? String(num) : String(num);
+}
 
 function getStatusClass(status: string): string {
   switch (status) {
@@ -47,6 +56,7 @@ function getStatusClass(status: string): string {
 
 export default function CKStaffGoodsReceiptMaterial() {
   const [rows, setRows] = useState<GoodsReceiptMaterialRow[]>([]);
+const [rawRows, setRawRows] = useState<GoodsReceiptMaterialRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -58,42 +68,113 @@ export default function CKStaffGoodsReceiptMaterial() {
   const [completeNotes, setCompleteNotes] = useState<string>("");
   const [rejectNotes, setRejectNotes] = useState<string>("");
 
-  const loadGoodsReceiptMaterials = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      const res = await goodsReceiptMaterialApi.getAll();
-      setRows(res.data.data ?? []);
-    } catch (error: unknown) {
-      toast.error(
-        getErrorMessage(error, "Không tải được Goods Receipt Material")
-      );
-      setRows([]);
-    } finally {
-      setLoading(false);
+const buildListRows = (data: GoodsReceiptMaterialRow[]): GoodsReceiptMaterialRow[] => {
+  const map = new Map<number, GoodsReceiptMaterialRow>();
+
+  for (const row of data) {
+    if (!map.has(row.id)) {
+      map.set(row.id, row);
     }
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.id - a.id);
+};
+
+const buildDetailFromRows = (
+  base: GoodsReceiptMaterialRow,
+  allRows: GoodsReceiptMaterialRow[]
+): GoodsReceiptMaterialDetail => {
+  const matched = allRows.filter((row) => row.id === base.id);
+
+  const items: GoodsReceiptMaterialItem[] = matched
+    .filter((row) => row.material_batch_id || row.material_name || row.received_quantity)
+    .map((row) => ({
+      material_id: row.material_id,
+      material_name: row.material_name,
+      material_sku: row.material_sku,
+      material_batch_id: row.material_batch_id,
+      batch_code: row.batch_code,
+      quantity: row.received_quantity ?? 0,
+      unit: row.unit,
+    }));
+
+  return {
+    id: base.id,
+    receipt_code: base.receipt_code,
+    supplier_id: base.supplier_id,
+    supplier_name: base.supplier_name,
+    status: base.status,
+    notes: base.notes,
+    created_by: base.created_by,
+    created_by_name: base.created_by_name,
+    confirmed_by: base.confirmed_by,
+    received_by: base.received_by,
+    received_by_name: base.received_by_name,
+    created_at: base.created_at,
+    updated_at: base.updated_at,
+    completed_at: base.completed_at,
+    store_name: base.store_name,
+    items,
   };
+};
+
+  const loadGoodsReceiptMaterials = async (): Promise<void> => {
+  try {
+    setLoading(true);
+    const res = await goodsReceiptMaterialApi.getAll();
+    const data = res.data.data ?? [];
+
+    setRawRows(data);
+    setRows(buildListRows(data));
+  } catch (error: unknown) {
+    toast.error(
+      getErrorMessage(error, "Failed to load Goods Receipt Materials")
+    );
+    setRawRows([]);
+    setRows([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     void loadGoodsReceiptMaterials();
   }, []);
 
   const handleViewDetail = async (id: number): Promise<void> => {
-    try {
-      setOpenDetail(true);
-      setDetailLoading(true);
-      setSelectedId(id);
+  try {
+    setOpenDetail(true);
+    setDetailLoading(true);
+    setSelectedId(id);
 
-      const res = await goodsReceiptMaterialApi.getById(id);
-      setDetail(res.data.data);
-    } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Không tải được chi tiết phiếu"));
-      setOpenDetail(false);
-      setDetail(null);
-      setSelectedId(null);
-    } finally {
-      setDetailLoading(false);
+    const baseRow = rawRows.find((row) => row.id === id);
+
+    if (!baseRow) {
+      throw new Error("Receipt not found");
     }
-  };
+
+    try {
+      const res = await goodsReceiptMaterialApi.getById(id);
+      const apiRow = res.data.data;
+
+      const mergedBase: GoodsReceiptMaterialRow = {
+        ...baseRow,
+        ...apiRow,
+      };
+
+      setDetail(buildDetailFromRows(mergedBase, rawRows));
+    } catch {
+      setDetail(buildDetailFromRows(baseRow, rawRows));
+    }
+  } catch (error: unknown) {
+    toast.error(getErrorMessage(error, "Failed to load receipt details"));
+    setOpenDetail(false);
+    setDetail(null);
+    setSelectedId(null);
+  } finally {
+    setDetailLoading(false);
+  }
+};
 
   const closeDetailModal = (): void => {
     setOpenDetail(false);
@@ -113,43 +194,49 @@ export default function CKStaffGoodsReceiptMaterial() {
         notes: completeNotes.trim(),
       });
 
-      toast.success("Complete Goods Receipt Material thành công");
-
-      const res = await goodsReceiptMaterialApi.getById(selectedId);
-      setDetail(res.data.data);
+      toast.success("Goods Receipt Material completed successfully");
+      closeDetailModal();
 
       await loadGoodsReceiptMaterials();
-      setCompleteNotes("");
+
+const refreshed = await goodsReceiptMaterialApi.getAll();
+const refreshedRows = refreshed.data.data ?? [];
+setRawRows(refreshedRows);
+setRows(buildListRows(refreshedRows));
+
+const baseRow = refreshedRows.find((row) => row.id === selectedId);
+if (baseRow) {
+  setDetail(buildDetailFromRows(baseRow, refreshedRows));
+}
+
+setCompleteNotes("");
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Complete thất bại"));
+      toast.error(getErrorMessage(error, "Failed to complete receipt"));
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleReject = async (): Promise<void> => {
-    if (!selectedId) return;
+  if (!selectedId) return;
 
-    try {
-      setActionLoading(true);
+  try {
+    setActionLoading(true);
 
-      await goodsReceiptMaterialApi.reject(selectedId, {
-        notes: rejectNotes.trim(),
-      });
+    await goodsReceiptMaterialApi.reject(selectedId, {
+      notes: rejectNotes.trim(),
+    });
 
-      toast.success("Reject Goods Receipt Material thành công");
+    await loadGoodsReceiptMaterials();
 
-      const res = await goodsReceiptMaterialApi.getById(selectedId);
-      setDetail(res.data.data);
-
-      await loadGoodsReceiptMaterials();
-      setRejectNotes("");
-    } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Reject thất bại"));
-    } finally {
-      setActionLoading(false);
-    }
-  };
+    toast.success("Goods Receipt Material rejected successfully");
+    closeDetailModal();
+  } catch (error: unknown) {
+    toast.error(getErrorMessage(error, "Failed to reject receipt"));
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -160,7 +247,7 @@ export default function CKStaffGoodsReceiptMaterial() {
               Goods Receipt Material
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              Phiếu nhập kho nguyên liệu từ supplier vào central kitchen
+              Material receipt records from supplier to central kitchen
             </p>
           </div>
 
@@ -176,11 +263,11 @@ export default function CKStaffGoodsReceiptMaterial() {
 
         {loading ? (
           <div className="py-10 text-center text-sm text-zinc-500">
-            Đang tải dữ liệu...
+            Loading data...
           </div>
         ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 py-10 text-center text-sm text-zinc-500">
-            Chưa có phiếu Goods Receipt Material nào.
+            No Goods Receipt Material receipts found.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -191,7 +278,7 @@ export default function CKStaffGoodsReceiptMaterial() {
                   <th className="px-4 py-3 font-medium">Receipt Code</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Created By</th>
-                  <th className="px-4 py-3 font-medium">Confirmed By</th>
+                  
                   <th className="px-4 py-3 font-medium">Created At</th>
                   <th className="px-4 py-3 font-medium text-center">Action</th>
                 </tr>
@@ -222,12 +309,10 @@ export default function CKStaffGoodsReceiptMaterial() {
                     </td>
 
                     <td className="px-4 py-3 text-zinc-700">
-                      {row.created_by ?? "-"}
-                    </td>
+  {row.created_by_name || row.created_by || "-"}
+</td>
 
-                    <td className="px-4 py-3 text-zinc-700">
-                      {row.confirmed_by ?? "-"}
-                    </td>
+                    
 
                     <td className="px-4 py-3 text-zinc-700">
                       {formatDate(row.created_at)}
@@ -262,7 +347,7 @@ export default function CKStaffGoodsReceiptMaterial() {
                   Goods Receipt Material Detail
                 </h2>
                 <p className="text-sm text-zinc-500">
-                  Xem chi tiết và xử lý phiếu nhập kho nguyên liệu
+                  View details and process the material receipt
                 </p>
               </div>
 
@@ -278,7 +363,7 @@ export default function CKStaffGoodsReceiptMaterial() {
             <div className="p-6">
               {detailLoading || !detail ? (
                 <div className="py-10 text-center text-sm text-zinc-500">
-                  Đang tải chi tiết...
+                  Loading details...
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -318,10 +403,10 @@ export default function CKStaffGoodsReceiptMaterial() {
 
                     <div className="rounded-2xl bg-zinc-50 p-4">
                       <div className="text-xs font-medium uppercase text-zinc-500">
-                        Supplier ID
+                        Supplier
                       </div>
                       <div className="mt-1 text-base font-semibold text-zinc-900">
-                        {detail.supplier_id ?? "-"}
+                        {detail.supplier_name || detail.supplier_id || "-"}
                       </div>
                     </div>
 
@@ -330,18 +415,12 @@ export default function CKStaffGoodsReceiptMaterial() {
                         Created By
                       </div>
                       <div className="mt-1 text-base font-semibold text-zinc-900">
-                        {detail.created_by ?? "-"}
+                        {detail.created_by_name || detail.created_by || "-"}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-zinc-50 p-4">
-                      <div className="text-xs font-medium uppercase text-zinc-500">
-                        Confirmed By
-                      </div>
-                      <div className="mt-1 text-base font-semibold text-zinc-900">
-                        {detail.confirmed_by ?? "-"}
-                      </div>
-                    </div>
+                    
+                    
 
                     <div className="rounded-2xl bg-zinc-50 p-4">
                       <div className="text-xs font-medium uppercase text-zinc-500">
@@ -372,7 +451,7 @@ export default function CKStaffGoodsReceiptMaterial() {
 
                     {!detail.items || detail.items.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 py-8 text-center text-sm text-zinc-500">
-                        Phiếu này chưa có item.
+                        This receipt has no items.
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
@@ -405,7 +484,7 @@ export default function CKStaffGoodsReceiptMaterial() {
                                   {item.material_name || "-"}
                                 </td>
                                 <td className="px-4 py-3 text-zinc-700">
-                                  {item.quantity}
+                                  {formatQty(item.quantity)}
                                 </td>
                                 <td className="px-4 py-3 text-zinc-700">
                                   {item.unit || "-"}
@@ -435,7 +514,7 @@ export default function CKStaffGoodsReceiptMaterial() {
                           value={completeNotes}
                           onChange={(e) => setCompleteNotes(e.target.value)}
                           rows={4}
-                          placeholder="Nhập ghi chú hoàn tất phiếu..."
+                          placeholder="Enter completion notes..."
                           className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"
                         />
 
@@ -465,7 +544,7 @@ export default function CKStaffGoodsReceiptMaterial() {
                           value={rejectNotes}
                           onChange={(e) => setRejectNotes(e.target.value)}
                           rows={4}
-                          placeholder="Nhập lý do reject phiếu..."
+                          placeholder="Enter rejection reason..."
                           className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-rose-500"
                         />
 

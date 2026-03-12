@@ -14,7 +14,8 @@ import Card from "../../../components/Card";
 import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
 import productApi, { type ProductItem } from "../../../api/productApi";
-
+import { storeApi } from "../../../api/store.api";
+import type { Store } from "../../../types/store.type";
 type OrderItemRow = {
   order_item_id: number;
   product_id: number;
@@ -41,7 +42,7 @@ type OrderDetail = {
 type CreateRow = {
   product_id: number | "";
   quantity: number | "";
-  unit_price: number | "";
+  unit_price: number;
 };
 
 function toNumber(v: string | number | undefined) {
@@ -84,8 +85,8 @@ export default function FRStaffOrder() {
     return d.toISOString().slice(0, 10);
   });
   const [createRows, setCreateRows] = useState<CreateRow[]>([
-    { product_id: "", quantity: 1, unit_price: "" },
-  ]);
+  { product_id: "", quantity: 1, unit_price: 0 },
+]);
   const [creating, setCreating] = useState(false);
 
   // List
@@ -93,6 +94,7 @@ export default function FRStaffOrder() {
 const [refreshing, setRefreshing] = useState(false);
 const [error, setError] = useState("");
 const [orders, setOrders] = useState<OrderRow[]>([]);
+const [stores, setStores] = useState<Store[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
 
@@ -139,43 +141,60 @@ const fetchProducts = useCallback(async () => {
     setProducts([]);
   }
 }, []);
+const fetchStores = useCallback(async () => {
+  try {
+    const res = await storeApi.getAll();
+    const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+    setStores(data);
+  } catch (e) {
+    console.error(e);
+    setStores([]);
+  }
+}, []);
 
 useEffect(() => {
   const init = async () => {
-    await Promise.all([fetchAll(false), fetchProducts()]);
+    await Promise.all([fetchAll(false), fetchProducts(), fetchStores()]);
   };
 
   void init();
-}, [fetchAll, fetchProducts]);
+}, [fetchAll, fetchProducts, fetchStores]);
 
   const filtered = useMemo(() => {
-    const q = (search || "").trim().toLowerCase();
-    return orders.filter((o) => {
-      const matchSearch =
-        !q ||
-        String(o.id).includes(q) ||
-        String(o.order_code || "").toLowerCase().includes(q);
-      const matchStatus =
-        statusFilter === "ALL"
-          ? true
-          : normStatus(o.status) === normStatus(statusFilter);
-      return matchSearch && matchStatus;
-    });
-  }, [orders, search, statusFilter]);
+  const q = (search || "").trim().toLowerCase();
+  return orders.filter((o) => {
+    const matchSearch =
+      !q || String(o.order_code || "").toLowerCase().includes(q);
+    const matchStatus =
+      statusFilter === "ALL"
+        ? true
+        : normStatus(o.status) === normStatus(statusFilter);
+    return matchSearch && matchStatus;
+  });
+}, [orders, search, statusFilter]);
+
+const storeMap = useMemo(() => {
+  return new Map<number, string>(
+    stores.map((s) => [Number(s.id), String(s.name)])
+  );
+}, [stores]);
 
   const total = orders.length;
-  const pending = useMemo(
-    () => orders.filter((o) => normStatus(o.status) === "SUBMITTED").length,
-    [orders]
-  );
-  const issued = useMemo(
-    () => orders.filter((o) => normStatus(o.status) === "ISSUED").length,
-    [orders]
-  );
-  const delivered = useMemo(
-    () => orders.filter((o) => normStatus(o.status) === "DELIVERED").length,
-    [orders]
-  );
+
+const submitted = useMemo(
+  () => orders.filter((o) => normStatus(o.status) === "SUBMITTED").length,
+  [orders]
+);
+
+const issued = useMemo(
+  () => orders.filter((o) => normStatus(o.status) === "ISSUED").length,
+  [orders]
+);
+
+const delivered = useMemo(
+  () => orders.filter((o) => normStatus(o.status) === "DELIVERED").length,
+  [orders]
+);
 
   const openOrderDetail = async (orderId: number) => {
     setOpenDetail(true);
@@ -227,11 +246,11 @@ useEffect(() => {
   }, [createRows]);
 
   const addRow = () => {
-    setCreateRows((prev) => [
-      ...prev,
-      { product_id: "", quantity: 1, unit_price: "" },
-    ]);
-  };
+  setCreateRows((prev) => [
+    ...prev,
+    { product_id: "", quantity: 1, unit_price: 0 },
+  ]);
+};
 
   const removeRow = (idx: number) => {
     setCreateRows((prev) => prev.filter((_, i) => i !== idx));
@@ -242,6 +261,15 @@ useEffect(() => {
       prev.map((r, i) => (i === idx ? { ...r, ...patch } : r))
     );
   };
+  const getProductUnitPrice = (productId: number): number => {
+  const product = products.find((p) => Number(p.id) === Number(productId));
+  if (!product) return 0;
+
+  const raw =
+    (product as ProductItem & { unit_price?: number | string }).unit_price ?? 0;
+
+  return toNumber(raw);
+};
 
   const submitCreate = async () => {
     const delivery_date = (createDeliveryDate || "").trim();
@@ -251,14 +279,13 @@ useEffect(() => {
     }
 
     const items = createRows
-      .map((r) => ({
-        product_id:
-          typeof r.product_id === "string" ? Number(r.product_id) : r.product_id,
-        quantity:
-          typeof r.quantity === "string" ? Number(r.quantity) : r.quantity,
-        unit_price:
-          typeof r.unit_price === "string" ? Number(r.unit_price) : r.unit_price,
-      }))
+  .map((r) => ({
+    product_id:
+      typeof r.product_id === "string" ? Number(r.product_id) : r.product_id,
+    quantity:
+      typeof r.quantity === "string" ? Number(r.quantity) : r.quantity,
+    unit_price: r.unit_price,
+  }))
       .filter((r) => Number.isFinite(r.product_id) && r.product_id > 0)
       .map((r) => ({
         product_id: Number(r.product_id),
@@ -275,7 +302,7 @@ useEffect(() => {
     try {
      await orderApi.create({ delivery_date, items });
 toast.success("Order created successfully");
-setCreateRows([{ product_id: "", quantity: 1, unit_price: "" }]);
+setCreateRows([{ product_id: "", quantity: 1, unit_price: 0 }]);
 setOpenCreate(false);
 await fetchAll(true);
     } catch (e: unknown) {
@@ -287,42 +314,40 @@ await fetchAll(true);
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-2">Manage Store Orders</h2>
-      <p className="text-gray-600 mb-6">
-        FR Staff can create orders and manage order status
-      </p>
+      
+      
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card
-          title="Total Orders"
-          value={total}
-          subtext="All orders"
-          borderColor="border-blue-500"
-          icon={<ClipboardList className="w-7 h-7 text-blue-600" />}
-        />
-        <Card
-          title="Pending"
-          value={pending}
-          subtext="Waiting confirm"
-          borderColor="border-yellow-500"
-          icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
-        />
-        <Card
-          title="Issued"
-          value={issued}
-          subtext="On the way"
-          borderColor="border-orange-500"
-          icon={<Truck className="w-7 h-7 text-orange-600" />}
-        />
-        <Card
-          title="Delivered"
-          value={delivered}
-          subtext="Done"
-          borderColor="border-green-500"
-          icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
-        />
-      </div>
+     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+  <Card
+    title="Total Orders"
+    value={total}
+    subtext="All orders"
+    borderColor="border-blue-500"
+    icon={<ClipboardList className="w-7 h-7 text-blue-600" />}
+  />
+  <Card
+    title="Submitted"
+    value={submitted}
+    subtext="Waiting for confirmation"
+    borderColor="border-yellow-500"
+    icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
+  />
+  <Card
+    title="Issued"
+    value={issued}
+    subtext="Ready for delivery"
+    borderColor="border-orange-500"
+    icon={<Truck className="w-7 h-7 text-orange-600" />}
+  />
+  <Card
+    title="Delivered"
+    value={delivered}
+    subtext="Completed orders"
+    borderColor="border-green-500"
+    icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
+  />
+</div>
 
       <div className="bg-white/95 rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
@@ -351,7 +376,7 @@ await fetchAll(true);
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search ID, Order code..."
+              placeholder="Search order code..."
               className="w-full md:w-[260px] px-4 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
             />
 
@@ -378,7 +403,7 @@ await fetchAll(true);
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-700">
               <tr>
-                <th className="text-left px-4 py-3 whitespace-nowrap">ID</th>
+                
                 <th className="text-left px-4 py-3 whitespace-nowrap">
                   Order Code
                 </th>
@@ -399,10 +424,12 @@ await fetchAll(true);
             <tbody>
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t">
-                  <td className="px-4 py-3">{o.id}</td>
+                  
                   <td className="px-4 py-3 font-medium">{o.order_code}</td>
 
-                  <td className="px-4 py-3">{o.store_id}</td>
+                  <td className="px-4 py-3">
+  {storeMap.get(Number(o.store_id)) || "-"}
+</td>
                   <td className="px-4 py-3">{formatDate(o.order_date)}</td>
                   <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
                   <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
@@ -423,7 +450,7 @@ await fetchAll(true);
 
               {!loading && filtered.length === 0 ? (
                 <tr className="border-t">
-                  <td className="px-4 py-6 text-gray-500" colSpan={9}>
+                  <td className="px-4 py-6 text-gray-500" colSpan={7}>
                     No orders
                   </td>
                 </tr>
@@ -486,10 +513,10 @@ await fetchAll(true);
                     <thead className="bg-white text-gray-700">
                       <tr className="border-b">
                         <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
-                        <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
-                        <th className="text-left px-4 py-3 whitespace-nowrap">Unit price</th>
-                        <th className="text-left px-4 py-3 whitespace-nowrap">Line total</th>
-                        <th className="text-left px-4 py-3 whitespace-nowrap">Remove</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Line Total</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Remove</th>
                       </tr>
                     </thead>
 
@@ -500,14 +527,19 @@ await fetchAll(true);
                           <tr key={idx} className="border-t">
                             <td className="px-4 py-3 min-w-[280px]">
                               <select
-                                value={r.product_id}
-                                onChange={(e) =>
-                                  setRow(idx, {
-                                    product_id: e.target.value ? Number(e.target.value) : "",
-                                  })
-                                }
-                                className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
-                              >
+  value={r.product_id}
+  onChange={(e) => {
+    const productId = e.target.value ? Number(e.target.value) : "";
+    const unitPrice =
+      typeof productId === "number" ? getProductUnitPrice(productId) : 0;
+
+    setRow(idx, {
+      product_id: productId,
+      unit_price: unitPrice,
+    });
+  }}
+  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
+>
                                 <option value="">Select product...</option>
                                 {products.map((p) => (
                                   <option key={p.id} value={p.id}>
@@ -532,18 +564,10 @@ await fetchAll(true);
                             </td>
 
                             <td className="px-4 py-3 w-[180px]">
-                              <input
-                                type="number"
-                                min={0}
-                                value={r.unit_price}
-                                onChange={(e) =>
-                                  setRow(idx, {
-                                    unit_price: e.target.value === "" ? "" : Number(e.target.value),
-                                  })
-                                }
-                                className="w-full px-3 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
-                              />
-                            </td>
+  <div className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-700">
+    {r.product_id === "" ? "-" : formatMoney(r.unit_price)}
+  </div>
+</td>
 
                             <td className="px-4 py-3 whitespace-nowrap font-semibold">
                               {formatMoney(lineTotal)}
@@ -653,7 +677,10 @@ await fetchAll(true);
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <Info label="Order Code" value={detail.order_code} />
-                    <Info label="Store ID" value={String(detail.store_id)} />
+                    <Info
+  label="Store"
+  value={storeMap.get(Number(detail.store_id)) || String(detail.store_id)}
+/>
                     <Info label="Status" value={normStatus(detail.status)} />
                     <Info
                       label="Total Amount"

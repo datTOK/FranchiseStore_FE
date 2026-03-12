@@ -7,8 +7,11 @@ export type GoodsReceiptMaterialStatus =
   | string;
 
 export type GoodsReceiptMaterialItem = {
-  material_id: number;
+  material_id?: number;
   material_name?: string;
+  material_sku?: string;
+  material_batch_id?: number;
+  batch_code?: string;
   quantity: number | string;
   unit?: string;
 };
@@ -16,17 +19,47 @@ export type GoodsReceiptMaterialItem = {
 export type GoodsReceiptMaterialRow = {
   id: number;
   receipt_code?: string;
-  supplier_id?: number;
-  material_inventory_id?: number;
+  supplier_id?: number | null;
+  supplier_name?: string;
   status: GoodsReceiptMaterialStatus;
+  notes?: string;
   created_by?: number | null;
+  created_by_name?: string | null;
   confirmed_by?: number | null;
+  received_by?: number | null;
+  received_by_name?: string | null;
   created_at?: string;
   updated_at?: string;
-  items?: GoodsReceiptMaterialItem[];
+  completed_at?: string | null;
+  store_name?: string | null;
+
+  material_id?: number;
+  material_name?: string;
+  material_sku?: string;
+  material_batch_id?: number;
+  batch_code?: string;
+  received_quantity?: number | string;
+  unit?: string;
 };
 
-export type GoodsReceiptMaterialDetail = GoodsReceiptMaterialRow;
+export type GoodsReceiptMaterialDetail = {
+  id: number;
+  receipt_code?: string;
+  supplier_id?: number | null;
+  supplier_name?: string;
+  status: GoodsReceiptMaterialStatus;
+  notes?: string;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  confirmed_by?: number | null;
+  received_by?: number | null;
+  received_by_name?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  completed_at?: string | null;
+  store_name?: string | null;
+  items: GoodsReceiptMaterialItem[];
+};
 
 export type ApiListResponse<T> = {
   data: T[];
@@ -48,7 +81,7 @@ const goodsReceiptMaterialApi = {
   },
 
   getById(id: number) {
-    return axiosClient.get<ApiDetailResponse<GoodsReceiptMaterialDetail>>(
+    return axiosClient.get<ApiDetailResponse<GoodsReceiptMaterialRow>>(
       `/goods-receipt-materials/${id}`
     );
   },

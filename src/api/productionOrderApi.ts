@@ -30,14 +30,20 @@ export type ProductionOrderRow = {
   material_count?: number;
 };
 
+export type ProductionOrderMaterial = {
+  id?: number;
+  material_id?: number;
+  material_name?: string;
+  material_sku?: string;
+  required_quantity?: number | string;
+  required_unit?: string;
+  allocated_quantity?: number | string;
+  allocated_unit?: string;
+  status?: string;
+};
+
 export type ProductionOrderDetail = ProductionOrderRow & {
-  materials?: Array<{
-    material_id?: number;
-    material_name?: string;
-    required_quantity?: number | string;
-    allocated_quantity?: number | string;
-    unit?: string;
-  }>;
+  materials?: ProductionOrderMaterial[];
 };
 
 export type CreateProductionOrderPayload = {
@@ -73,10 +79,8 @@ const productionOrderApi = {
   },
 
   getById(id: number) {
-    return axiosClient.get<ApiDetailResponse<ProductionOrderDetail>>(
-      `/production-orders/${id}`
-    );
-  },
+  return axiosClient.get<ProductionOrderDetail>(`/production-orders/${id}`);
+},
 
   create(payload: CreateProductionOrderPayload) {
     return axiosClient.post<ApiDetailResponse<ProductionOrderDetail>>(

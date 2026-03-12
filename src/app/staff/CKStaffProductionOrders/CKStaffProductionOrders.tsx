@@ -43,6 +43,14 @@ function formatDate(value?: string): string {
 
   return date.toLocaleString();
 }
+function formatQty(value: number | string | undefined): string {
+  if (value === undefined || value === null || value === "") return "-";
+
+  const num = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(num)) return String(value);
+
+  return Number.isInteger(num) ? String(num) : String(num);
+}
 
 function getStatusClass(status: string): string {
   switch (status) {
@@ -59,6 +67,53 @@ function getStatusClass(status: string): string {
     default:
       return "bg-zinc-100 text-zinc-700";
   }
+}
+
+function normalizeProductionOrderDetail(
+  raw: unknown,
+  fallbackRow: ProductionOrderRow
+): ProductionOrderDetail {
+  const root =
+    raw &&
+    typeof raw === "object" &&
+    "data" in raw &&
+    (raw as { data?: unknown }).data &&
+    typeof (raw as { data?: unknown }).data === "object"
+      ? ((raw as { data?: unknown }).data as Record<string, unknown>)
+      : ((raw as Record<string, unknown>) ?? {});
+
+  const nestedOrder =
+    root.order && typeof root.order === "object"
+      ? (root.order as Partial<ProductionOrderDetail>)
+      : root.orders && typeof root.orders === "object"
+      ? (root.orders as Partial<ProductionOrderDetail>)
+      : null;
+
+  const source: Partial<ProductionOrderDetail> =
+    nestedOrder ?? (root as Partial<ProductionOrderDetail>);
+
+  const materialsSource =
+    Array.isArray(source.materials)
+      ? source.materials
+      : Array.isArray(
+          (root as { materials?: unknown }).materials
+        )
+      ? ((root as { materials?: ProductionOrderDetail["materials"] }).materials ?? [])
+      : [];
+
+  return {
+    ...fallbackRow,
+    ...source,
+    status: source.status || fallbackRow.status,
+    order_code: source.order_code || fallbackRow.order_code,
+    recipe_name: source.recipe_name || fallbackRow.recipe_name,
+    product_name: source.product_name || fallbackRow.product_name,
+    target_quantity: source.target_quantity ?? fallbackRow.target_quantity,
+    target_unit: source.target_unit || fallbackRow.target_unit,
+    actual_quantity: source.actual_quantity ?? fallbackRow.actual_quantity,
+    target_date: source.target_date || fallbackRow.target_date,
+    materials: materialsSource,
+  };
 }
 
 export default function CKStaffProductionOrders() {
@@ -203,22 +258,20 @@ export default function CKStaffProductionOrders() {
       );
 
       const res = await productionOrderApi.getById(row.id);
-      const detailData = res.data.data;
+console.log("production order detail response =", res);
+console.log("production order detail response.data =", res.data);
 
-      setDetail({
-        ...detailData,
-        status: detailData.status || row.status,
-        order_code: detailData.order_code || row.order_code,
-        recipe_name: detailData.recipe_name || row.recipe_name,
-        product_name: detailData.product_name || row.product_name,
-        target_quantity: detailData.target_quantity ?? row.target_quantity,
-        target_unit: detailData.target_unit || row.target_unit,
-        actual_quantity: detailData.actual_quantity ?? row.actual_quantity,
-        target_date: detailData.target_date || row.target_date,
-      });
+const normalizedDetail = normalizeProductionOrderDetail(res.data, row);
+console.log("normalized detail =", normalizedDetail);
+console.log("normalized materials =", normalizedDetail.materials);
 
-      const quantitySource =
-        detailData.actual_quantity ?? detailData.target_quantity ?? row.target_quantity ?? 1;
+setDetail(normalizedDetail);
+
+const quantitySource =
+  normalizedDetail.actual_quantity ??
+  normalizedDetail.target_quantity ??
+  row.target_quantity ??
+  1;
 
       setCompleteQuantity(
         String(Number(quantitySource) >= 1 ? Math.floor(Number(quantitySource)) : 1)
@@ -248,19 +301,8 @@ export default function CKStaffProductionOrders() {
     if (!selectedId || !selectedRow) return;
 
     const res = await productionOrderApi.getById(selectedId);
-    const detailData = res.data.data;
-
-    setDetail({
-      ...detailData,
-      status: detailData.status || selectedRow.status,
-      order_code: detailData.order_code || selectedRow.order_code,
-      recipe_name: detailData.recipe_name || selectedRow.recipe_name,
-      product_name: detailData.product_name || selectedRow.product_name,
-      target_quantity: detailData.target_quantity ?? selectedRow.target_quantity,
-      target_unit: detailData.target_unit || selectedRow.target_unit,
-      actual_quantity: detailData.actual_quantity ?? selectedRow.actual_quantity,
-      target_date: detailData.target_date || selectedRow.target_date,
-    });
+const normalizedDetail = normalizeProductionOrderDetail(res.data, selectedRow);
+setDetail(normalizedDetail);
   };
 
   const handleStart = async (): Promise<void> => {
@@ -414,7 +456,7 @@ export default function CKStaffProductionOrders() {
                 <tr className="border-b border-zinc-200 text-left text-zinc-500">
                   <th className="px-4 py-3 font-medium">ID</th>
                   <th className="px-4 py-3 font-medium">Order Code</th>
-                  <th className="px-4 py-3 font-medium">Recipe</th>
+                  
                   <th className="px-4 py-3 font-medium">Product</th>
                   <th className="px-4 py-3 font-medium">Target Qty</th>
                   <th className="px-4 py-3 font-medium">Actual Qty</th>
@@ -429,18 +471,16 @@ export default function CKStaffProductionOrders() {
                   <tr key={row.id} className="border-b border-zinc-100 hover:bg-zinc-50">
                     <td className="px-4 py-3 font-medium text-zinc-900">{row.id}</td>
                     <td className="px-4 py-3 text-zinc-700">{row.order_code}</td>
-                    <td className="px-4 py-3 text-zinc-700">
-                      {row.recipe_name || `Recipe ${row.recipe_id}`}
-                    </td>
+                    
                     <td className="px-4 py-3 text-zinc-700">
                       {row.product_name || `Product ${row.product_id}`}
                     </td>
                     <td className="px-4 py-3 text-zinc-700">
-                      {row.target_quantity} {row.target_unit}
-                    </td>
+  {formatQty(row.target_quantity)}
+</td>
                     <td className="px-4 py-3 text-zinc-700">
-                      {row.actual_quantity ?? "-"}
-                    </td>
+  {row.actual_quantity != null ? formatQty(row.actual_quantity) : "-"}
+</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
@@ -728,11 +768,7 @@ export default function CKStaffProductionOrders() {
                       </div>
                     )}
 
-                    {(currentStatus === "COMPLETED" || currentStatus === "CANCELLED") && (
-                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                        This production order is already <b>{currentStatus}</b>.
-                      </div>
-                    )}
+                    
 
                     <div className="rounded-2xl border border-zinc-200 p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -751,8 +787,10 @@ export default function CKStaffProductionOrders() {
                                 <th className="px-4 py-3 font-medium">Material ID</th>
                                 <th className="px-4 py-3 font-medium">Material Name</th>
                                 <th className="px-4 py-3 font-medium">Required Qty</th>
-                                <th className="px-4 py-3 font-medium">Allocated Qty</th>
-                                <th className="px-4 py-3 font-medium">Unit</th>
+<th className="px-4 py-3 font-medium">Required Unit</th>
+<th className="px-4 py-3 font-medium">Allocated Qty</th>
+<th className="px-4 py-3 font-medium">Allocated Unit</th>
+<th className="px-4 py-3 font-medium">Status</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -768,14 +806,20 @@ export default function CKStaffProductionOrders() {
                                     {item.material_name ?? "-"}
                                   </td>
                                   <td className="px-4 py-3 text-zinc-700">
-                                    {item.required_quantity ?? "-"}
-                                  </td>
-                                  <td className="px-4 py-3 text-zinc-700">
-                                    {item.allocated_quantity ?? "-"}
-                                  </td>
-                                  <td className="px-4 py-3 text-zinc-700">
-                                    {item.unit ?? "-"}
-                                  </td>
+  {item.required_quantity != null ? formatQty(item.required_quantity) : "-"}
+</td>
+<td className="px-4 py-3 text-zinc-700">
+  {item.required_unit ?? "-"}
+</td>
+<td className="px-4 py-3 text-zinc-700">
+  {item.allocated_quantity != null ? formatQty(item.allocated_quantity) : "-"}
+</td>
+<td className="px-4 py-3 text-zinc-700">
+  {item.allocated_unit ?? "-"}
+</td>
+<td className="px-4 py-3 text-zinc-700">
+  {item.status ?? "-"}
+</td>
                                 </tr>
                               ))}
                             </tbody>

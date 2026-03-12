@@ -238,12 +238,12 @@ const delivered = useMemo(
     setDetailLoading(false);
   };
 
-  const createTotal = useMemo(() => {
-    return createRows.reduce(
-      (sum, r) => sum + toNumber(r.quantity) * toNumber(r.unit_price),
-      0
-    );
-  }, [createRows]);
+  // const createTotal = useMemo(() => {
+  //   return createRows.reduce(
+  //     (sum, r) => sum + toNumber(r.quantity) * toNumber(r.unit_price),
+  //     0
+  //   );
+  // }, [createRows]);
 
   const addRow = () => {
   setCreateRows((prev) => [
@@ -463,7 +463,7 @@ await fetchAll(true);
       
          {/* CREATE ORDER MODAL */}
       {openCreate ? (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[9999]">
+        <div className="fixed top-0 right-0 bottom-0 left-0 md:left-[260px] bg-black/40 flex items-center justify-center p-4 z-[9999]">
           <div className="w-full max-w-5xl bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col max-h-[85vh]">
             {/* HEADER */}
             <div className="p-4 border-b flex items-center justify-between">
@@ -513,16 +513,19 @@ await fetchAll(true);
                     <thead className="bg-white text-gray-700">
                       <tr className="border-b">
                         <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
+
 <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
 <th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
 <th className="text-left px-4 py-3 whitespace-nowrap">Line Total</th>
 <th className="text-left px-4 py-3 whitespace-nowrap">Remove</th>
+
+
                       </tr>
                     </thead>
 
                     <tbody>
                       {createRows.map((r, idx) => {
-                        const lineTotal = toNumber(r.quantity) * toNumber(r.unit_price);
+                        // const lineTotal = toNumber(r.quantity) * toNumber(r.unit_price);
                         return (
                           <tr key={idx} className="border-t">
                             <td className="px-4 py-3 min-w-[280px]">
@@ -563,15 +566,17 @@ await fetchAll(true);
                               />
                             </td>
 
+
                             <td className="px-4 py-3 w-[180px]">
   <div className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-700">
     {r.product_id === "" ? "-" : formatMoney(r.unit_price)}
   </div>
 </td>
 
-                            <td className="px-4 py-3 whitespace-nowrap font-semibold">
+
+                            {/* <td className="px-4 py-3 whitespace-nowrap font-semibold">
                               {formatMoney(lineTotal)}
-                            </td>
+                            </td> */}
 
                             <td className="px-4 py-3">
                               <button
@@ -612,12 +617,12 @@ await fetchAll(true);
                 </button>
 
                 {/* Middle/Right: Total */}
-                <div className="flex items-center justify-between sm:justify-end gap-3">
+                {/* <div className="flex items-center justify-between sm:justify-end gap-3">
                   <div className="text-sm text-gray-600">Total</div>
                   <div className="text-xl font-bold text-orange-600">
                     {formatMoney(createTotal)}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Right: Actions */}
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
@@ -643,9 +648,9 @@ await fetchAll(true);
                 </div>
               </div>
 
-              <div className="mt-2 text-xs text-gray-400">
+              {/* <div className="mt-2 text-xs text-gray-400">
                 Tip: Total = sum(qty × unit price)
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

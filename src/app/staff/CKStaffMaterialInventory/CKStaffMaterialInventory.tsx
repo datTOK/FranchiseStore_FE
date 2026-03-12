@@ -102,7 +102,7 @@ const [batchMap, setBatchMap] = useState<BatchMap>({});
 const [batchLoadingMap, setBatchLoadingMap] = useState<LoadingBatchMap>({});
 
 const loadedRef = useRef(false);
-const [initializedFromCache, setInitializedFromCache] = useState<boolean>(false);
+// const [initializedFromCache, setInitializedFromCache] = useState<boolean>(false);
   const loadMaterialInventory = async (
   isRefresh = false,
   showFullLoading = false
@@ -139,7 +139,7 @@ const [initializedFromCache, setInitializedFromCache] = useState<boolean>(false)
   if (cachedRows && cachedRows.length > 0) {
     setRows(cachedRows);
     setLoading(false);
-    setInitializedFromCache(true);
+    // setInitializedFromCache(true);
     void loadMaterialInventory(false, false);
     return;
   }
@@ -249,7 +249,7 @@ const handleToggleExpand = async (materialId: number): Promise<void> => {
   type="button"
   onClick={() => {
     sessionStorage.removeItem(MATERIAL_INVENTORY_CACHE_KEY);
-    setInitializedFromCache(false);
+    // setInitializedFromCache(false);
     void loadMaterialInventory(true, false);
   }}
   disabled={refreshing}

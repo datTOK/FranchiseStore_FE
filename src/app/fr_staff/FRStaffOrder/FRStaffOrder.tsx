@@ -61,6 +61,16 @@ function formatDate(iso: string | null | undefined) {
   if (Number.isNaN(d.getTime())) return String(iso);
   return d.toLocaleDateString("vi-VN");
 }
+function getProductSku(products: ProductItem[], productId: number) {
+  const found = products.find((p) => Number(p.id) === Number(productId));
+  if (!found) return "-";
+
+  const sku =
+    (found as ProductItem & { sku?: string }).sku ??
+    (found as ProductItem & { product_sku?: string }).product_sku;
+
+  return sku ? String(sku) : "-";
+}
 
 function normStatus(s: OrderStatus) {
   return String(s || "").toUpperCase();
@@ -704,46 +714,43 @@ await fetchAll(true);
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-gray-700">
                           <tr>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">
-                              Item ID
-                            </th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">
-                              Product
-                            </th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">
-                              Qty
-                            </th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">
-                              Unit Price
-                            </th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">
-                              Total
-                            </th>
-                          </tr>
+  <th className="text-left px-4 py-3 whitespace-nowrap">
+    Product
+  </th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">
+    SKU
+  </th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">
+    Quantity
+  </th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">
+    Unit Price
+  </th>
+  <th className="text-left px-4 py-3 whitespace-nowrap">
+    Total
+  </th>
+</tr>
                         </thead>
                         <tbody>
                           {(Array.isArray(detail.items) ? detail.items : []).map(
                             (it) => (
                               <tr key={it.order_item_id} className="border-t">
-                                <td className="px-4 py-3">{it.order_item_id}</td>
-                                <td className="px-4 py-3">
-                                  <div className="font-medium">
-                                    {it.product_name}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    #{it.product_id}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  {toNumber(it.quantity)}
-                                </td>
-                                <td className="px-4 py-3">
-                                  {formatMoney(it.unit_price)}
-                                </td>
-                                <td className="px-4 py-3">
-                                  {formatMoney(it.total_price)}
-                                </td>
-                              </tr>
+  <td className="px-4 py-3">
+    <div className="font-medium">{it.product_name}</div>
+  </td>
+  <td className="px-4 py-3">
+    {getProductSku(products, it.product_id)}
+  </td>
+  <td className="px-4 py-3">
+    {toNumber(it.quantity)}
+  </td>
+  <td className="px-4 py-3">
+    {formatMoney(it.unit_price)}
+  </td>
+  <td className="px-4 py-3">
+    {formatMoney(it.total_price)}
+  </td>
+</tr>
                             )
                           )}
 

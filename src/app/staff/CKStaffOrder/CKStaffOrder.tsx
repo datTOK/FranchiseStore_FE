@@ -3,6 +3,7 @@ import { ClipboardList, CheckCircle2, Truck, Hourglass, RefreshCw, Eye } from "l
 import Card from "../../../components/Card";
 import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
+import productApi, { type ProductItem } from "../../../api/productApi";
 import { storeApi } from "../../../api/store.api";
 import type { Store } from "../../../types/store.type";
 
@@ -46,6 +47,17 @@ function formatDate(iso: string | null | undefined) {
   return d.toLocaleDateString("vi-VN");
 }
 
+function getProductSku(products: ProductItem[], productId: number) {
+  const found = products.find((p) => Number(p.id) === Number(productId));
+  if (!found) return "-";
+
+  const sku =
+    (found as ProductItem & { sku?: string }).sku ??
+    (found as ProductItem & { product_sku?: string }).product_sku;
+
+  return sku ? String(sku) : "-";
+}
+
 function normStatus(s: OrderStatus) {
   return String(s || "").toUpperCase();
 }
@@ -70,7 +82,8 @@ export default function StaffOrder() {
   const [error, setError] = useState("");
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
+const [stores, setStores] = useState<Store[]>([]);
+const [products, setProducts] = useState<ProductItem[]>([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
@@ -88,20 +101,24 @@ export default function StaffOrder() {
   setLoading(true);
 
   try {
-    const [orderRes, storeRes] = await Promise.all([
-      orderApi.getAll(),
-      storeApi.getAll(),
-    ]);
+    const [orderRes, storeRes, productRes] = await Promise.all([
+  orderApi.getAll(),
+  storeApi.getAll(),
+  productApi.getAll(),
+]);
 
-    const orderData = Array.isArray(orderRes?.data) ? orderRes.data : [];
-    const storeData = Array.isArray(storeRes?.data?.data) ? storeRes.data.data : [];
+const orderData = Array.isArray(orderRes?.data) ? orderRes.data : [];
+const storeData = Array.isArray(storeRes?.data?.data) ? storeRes.data.data : [];
+const productData = Array.isArray(productRes?.data) ? productRes.data : [];
 
-    setOrders(orderData);
-    setStores(storeData);
+setOrders(orderData);
+setStores(storeData);
+setProducts(productData);
   } catch (e: unknown) {
     setError(getErrorMessage(e, "Load orders failed"));
     setOrders([]);
-    setStores([]);
+setStores([]);
+setProducts([]);
   } finally {
     setLoading(false);
   }
@@ -363,25 +380,26 @@ export default function StaffOrder() {
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-gray-700">
                           <tr>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">Item ID</th>
                             <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
-                            <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">SKU</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
+<th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
                           </tr>
                         </thead>
                         <tbody>
                           {(Array.isArray(detail.items) ? detail.items : []).map((it) => (
                             <tr key={it.order_item_id} className="border-t">
-                              <td className="px-4 py-3">{it.order_item_id}</td>
-                              <td className="px-4 py-3">
-                                <div className="font-medium">{it.product_name}</div>
-                                <div className="text-xs text-gray-500">#{it.product_id}</div>
-                              </td>
-                              <td className="px-4 py-3">{toNumber(it.quantity)}</td>
-                              <td className="px-4 py-3">{formatMoney(it.unit_price)}</td>
-                              <td className="px-4 py-3">{formatMoney(it.total_price)}</td>
-                            </tr>
+  <td className="px-4 py-3">
+    <div className="font-medium">{it.product_name}</div>
+  </td>
+  <td className="px-4 py-3">
+    {getProductSku(products, it.product_id)}
+  </td>
+  <td className="px-4 py-3">{toNumber(it.quantity)}</td>
+  <td className="px-4 py-3">{formatMoney(it.unit_price)}</td>
+  <td className="px-4 py-3">{formatMoney(it.total_price)}</td>
+</tr>
                           ))}
 
                           {!detail.items || detail.items.length === 0 ? (

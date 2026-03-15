@@ -4,7 +4,7 @@ import inventoryApi, { type InventoryItemApi } from "../../../api/inventoryApi";
 import storePricingApi, { type StorePricingRow } from "../../../api/storePricingApi";
 import { categoryApi } from "../../../api/category.api";
 import type { Category } from "../../../types/category.type";
-
+import { productApi } from "../../../api/product.api";
 type InventoryRow = {
   id: number;
   product_id: number;
@@ -55,10 +55,11 @@ export default function FRStaffInventory() {
     try {
       setLoading(true);
 
-      const [invRes, catRes, pricingRes] = await Promise.all([
+  const [invRes, catRes, pricingRes, productRes] = await Promise.all([
   inventoryApi.getAll(),
   categoryApi.getAll(),
   storePricingApi.getAll(),
+  productApi.getAll(),
 ]);
 
 const inv: InventoryItemApi[] = Array.isArray(invRes?.data) ? invRes.data : [];
@@ -67,21 +68,30 @@ const pricings: StorePricingRow[] = Array.isArray(pricingRes?.data?.data)
   ? pricingRes.data.data
   : [];
 
+const products = Array.isArray(productRes?.data?.data) ? productRes.data.data : [];
+
       const catMap = new Map<number, string>(
         cats.map((c) => [Number(c.id), String(c.name)])
       );
 
-      const salePriceMap = new Map<number, number>();
-const unitPriceMap = new Map<number, number>();
+const salePriceMap = new Map<number, number>();
+const productPriceMap = new Map<number, number>();
+
+for (const p of products) {
+  const productId = Number(p.id);
+  const productUnitPrice = toNumber(p.unit_price);
+
+  if (Number.isFinite(productId) && productUnitPrice > 0) {
+    productPriceMap.set(productId, productUnitPrice);
+  }
+}
 
 for (const p of pricings) {
   const productId = Number(p.product_id);
   const salePrice = toNumber(p.sale_price);
-  const unitPrice = toNumber(p.unit_price);
 
-  if (Number.isFinite(productId)) {
+  if (Number.isFinite(productId) && salePrice > 0) {
     salePriceMap.set(productId, salePrice);
-    unitPriceMap.set(productId, unitPrice);
   }
 }
 
@@ -103,12 +113,13 @@ for (const p of pricings) {
       : qty <= LOW_STOCK_THRESHOLD
       ? "Low stock"
       : "In stock",
-  unit_price: unitPriceMap.has(Number(item.product_id))
-    ? unitPriceMap.get(Number(item.product_id)) ?? null
-    : null,
-  sale_price: salePriceMap.has(Number(item.product_id))
-    ? salePriceMap.get(Number(item.product_id)) ?? null
-    : null,
+  unit_price: productPriceMap.has(Number(item.product_id))
+  ? productPriceMap.get(Number(item.product_id)) ?? null
+  : null,
+
+sale_price: salePriceMap.has(Number(item.product_id))
+  ? salePriceMap.get(Number(item.product_id)) ?? null
+  : null,
 };
       });
 
@@ -233,7 +244,7 @@ for (const p of pricings) {
   <Th>Category</Th>
   <Th>Qty</Th>
   <Th>Status</Th>
-  <Th>Import Price</Th>
+  <Th>Cost of Goods Sold</Th>
   <Th>Sale Price</Th>
   <Th style={{ textAlign: "right" }}>Actions</Th>
 </tr>

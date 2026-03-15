@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+
 import toast from "react-hot-toast";
 import goodsReceiptApi, {
   type GoodsReceiptRow,
@@ -40,41 +42,43 @@ function getErrorMessage(e: unknown, fallback: string) {
   return err?.response?.data?.message || err?.message || fallback;
 }
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
+  try {
+    setLoading(true);
+    const res = await goodsReceiptApi.getAll();
+    const list: GoodsReceiptRow[] = Array.isArray(res?.data?.data)
+      ? res.data.data
+      : Array.isArray(res?.data)
+      ? (res.data as unknown as GoodsReceiptRow[])
+      : [];
+    setRows(list);
+  } catch (e: unknown) {
+    toast.error(getErrorMessage(e, "Load goods receipts thất bại"));
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+
+  useEffect(() => {
+  const init = async () => {
     try {
-      setLoading(true);
-      const res = await goodsReceiptApi.getAll();
-      const list: GoodsReceiptRow[] = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? (res.data as unknown as GoodsReceiptRow[])
+      const pRes = await productApi.getAll();
+      const pList: ProductItem[] = Array.isArray((pRes as ProductListResponse)?.data)
+        ? ((pRes as ProductListResponse).data as ProductItem[])
         : [];
-      setRows(list);
+      setProducts(pList);
+
+      await refresh();
     } catch (e: unknown) {
-      toast.error(getErrorMessage(e, "Load goods receipts thất bại"));
-    } finally {
-      setLoading(false);
+      toast.error(getErrorMessage(e, "Init thất bại"));
     }
   };
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        // load products for showing name in detail items
-        const pRes = await productApi.getAll();
-        const pList: ProductItem[] = Array.isArray((pRes as ProductListResponse)?.data)
-          ? ((pRes as ProductListResponse).data as ProductItem[])
-          : [];
-        setProducts(pList);
+  init();
+}, [refresh]);
 
-        await refresh();
-      } catch (e: unknown) {
-        toast.error(getErrorMessage(e, "Init thất bại"));
-      }
-    };
-    init();
-  },
-);
+
 
   const onView = async (id: number) => {
     try {

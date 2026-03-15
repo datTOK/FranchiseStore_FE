@@ -26,12 +26,19 @@ function toNumber(value: number | string | undefined): number {
   return typeof n === "number" && Number.isFinite(n) ? n : 0;
 }
 function formatQuantity(value: number | string | undefined): string {
-  const n = toNumber(value);
+  if (value === null || value === undefined || value === "") return "0";
 
-  return new Intl.NumberFormat("vi-VN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(n);
+  const raw = String(value).trim();
+
+  if (!raw.includes(".")) return raw;
+
+  const [integerPart, decimalPart] = raw.split(".");
+
+  if (!decimalPart) return integerPart;
+
+  const trimmedDecimal = decimalPart.replace(/0+$/, "");
+
+  return trimmedDecimal ? `${integerPart}.${trimmedDecimal}` : integerPart;
 }
 
 function formatDate(value?: string): string {

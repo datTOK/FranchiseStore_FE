@@ -535,8 +535,9 @@ await fetchAll(true);
 
                     <tbody>
                       {createRows.map((r, idx) => {
-                        // const lineTotal = toNumber(r.quantity) * toNumber(r.unit_price);
-                        return (
+  const lineTotal = toNumber(r.quantity) * toNumber(r.unit_price);
+
+  return (
                           <tr key={idx} className="border-t">
                             <td className="px-4 py-3 min-w-[280px]">
                               <select
@@ -584,9 +585,9 @@ await fetchAll(true);
 </td>
 
 
-                            {/* <td className="px-4 py-3 whitespace-nowrap font-semibold">
-                              {formatMoney(lineTotal)}
-                            </td> */}
+                            <td className="px-4 py-3 whitespace-nowrap font-semibold text-gray-900">
+  {r.product_id === "" ? "-" : formatMoney(lineTotal)}
+</td>
 
                             <td className="px-4 py-3">
                               <button

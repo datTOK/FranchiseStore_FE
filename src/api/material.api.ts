@@ -7,7 +7,8 @@ export const materialApi = {
         const res = await axiosClient.get<MaterialResponse>("/materials")
         return res.data.data
     },
-
     createMaterial: (payload: CreateMaterialPayload) =>
         axiosClient.post("/materials", payload),
+    updateMaterial: (id: number, payload: Partial<Material>) =>
+        axiosClient.patch(`/materials/${id}`, payload),
 }

@@ -25,7 +25,6 @@ export default function ManagerProducts() {
     name: '',
     image_url: '',
     uom: '',
-    product_type: 'FINISHED',
   })
 
   const [priceModal, setPriceModal] = useState(false)
@@ -95,7 +94,6 @@ export default function ManagerProducts() {
         name: '',
         image_url: '',
         uom: '',
-        product_type: 'FINISHED',
       })
 
       fetchProducts()
@@ -108,17 +106,16 @@ export default function ManagerProducts() {
     }
   }
 
-  const openCreateModal = () => {
-    setEditingProduct(null)
-    setForm({
-      category_id: 0,
-      name: '',
-      image_url: '',
-      uom: '',
-      product_type: 'FINISHED',
-    })
-    setIsOpen(true)
-  }
+  // const openCreateModal = () => {
+  //   setEditingProduct(null)
+  //   setForm({
+  //     category_id: 0,
+  //     name: '',
+  //     image_url: '',
+  //     uom: '',
+  //   })
+  //   setIsOpen(true)
+  // }
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product)
@@ -128,7 +125,6 @@ export default function ManagerProducts() {
       name: product.name,
       image_url: product.image_url || '',
       uom: product.uom,
-      product_type: product.product_type,
     })
 
     setIsOpen(true)
@@ -196,12 +192,12 @@ export default function ManagerProducts() {
           </p>
         </div>
 
-        <button
+        {/* <button
           onClick={openCreateModal}
           className="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:opacity-90 transition shadow-sm"
         >
           + Create Product
-        </button>
+        </button> */}
       </div>
 
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
@@ -334,30 +330,21 @@ export default function ManagerProducts() {
                 className="w-full border rounded-lg px-3 py-2"
               />
 
-              <input
-                placeholder="Unit of Measure"
+              <select
                 value={form.uom}
                 onChange={(e) =>
                   setForm({ ...form, uom: e.target.value })
                 }
                 className="w-full border rounded-lg px-3 py-2"
-              />
-
-              <select
-                value={form.product_type}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    product_type: e.target.value as
-                      | 'FINISHED'
-                      | 'RAW_MATERIAL',
-                  })
-                }
-                className="w-full border rounded-lg px-3 py-2"
               >
-                <option value="FINISHED">FINISHED</option>
-                <option value="RAW_MATERIAL">RAW_MATERIAL</option>
+                <option value="">Select unit</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+                <option value="PC">PC</option>
               </select>
+
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

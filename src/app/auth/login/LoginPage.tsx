@@ -22,7 +22,7 @@ function LoginPage() {
     } else if (normalizedRole === 'CK_STAFF') {
       navigate('/ck-staff/dashboard')
     } else if (normalizedRole === 'MANAGER') {
-      navigate('/manager/dashboard')
+      navigate('/manager/category')
     } else {
       console.warn('Unknown or missing role, defaulting to staff dashboard:', role)
       navigate('/ck-staff/dashboard')

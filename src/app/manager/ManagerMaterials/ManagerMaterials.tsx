@@ -3,13 +3,21 @@ import { materialApi } from "../../../api/material.api"
 import type { Material, CreateMaterialPayload } from "../../../types/material.type"
 import LoadingLottie from "../../../components/LoadingLottie"
 import toast from "react-hot-toast"
+import { Plus } from "lucide-react"
 
 export default function ManagerMaterials() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [loading, setLoading] = useState(false)
-
   const [isOpen, setIsOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const totalPages = Math.ceil(materials.length / pageSize)
+  const paginatedMaterials = materials.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
 
   const [form, setForm] = useState<CreateMaterialPayload>({
     name: "",
@@ -22,6 +30,7 @@ export default function ManagerMaterials() {
       setLoading(true)
       const res = await materialApi.getAll()
       setMaterials(res)
+      setCurrentPage(1)
     } catch (err) {
       console.error(err)
       toast.error("Failed to load materials")
@@ -35,7 +44,7 @@ export default function ManagerMaterials() {
   }, [])
 
   const handleSubmit = async () => {
-    if (!form.name.trim() || !form.unit.trim()) {
+    if (!form.name.trim() || !form.unit) {
       toast.error("Name and unit are required")
       return
     }
@@ -43,11 +52,16 @@ export default function ManagerMaterials() {
     try {
       setCreating(true)
 
-      await materialApi.createMaterial(form)
-
-      toast.success("Material created successfully")
+      if (editingMaterial) {
+        await materialApi.updateMaterial(editingMaterial.id, form)
+        toast.success("Material updated successfully")
+      } else {
+        await materialApi.createMaterial(form)
+        toast.success("Material created successfully")
+      }
 
       setIsOpen(false)
+      setEditingMaterial(null)
 
       setForm({
         name: "",
@@ -58,7 +72,11 @@ export default function ManagerMaterials() {
       fetchMaterials()
     } catch (err) {
       console.error(err)
-      toast.error("Create material failed")
+      toast.error(
+        editingMaterial
+          ? "Update material failed"
+          : "Create material failed"
+      )
     } finally {
       setCreating(false)
     }
@@ -79,8 +97,16 @@ export default function ManagerMaterials() {
         </div>
 
         <button
-          onClick={() => setIsOpen(true)}
-          className="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:opacity-90 transition shadow-sm"
+          onClick={() => {
+            setEditingMaterial(null)
+            setForm({
+              name: "",
+              unit: "",
+              description: "",
+            })
+            setIsOpen(true)
+          }}
+          className="px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:opacity-90 transition shadow-sm cursor-pointer"
         >
           + Create Material
         </button>
@@ -100,11 +126,12 @@ export default function ManagerMaterials() {
                 <th className="px-6 py-4 text-center">Unit</th>
                 <th className="px-6 py-4 text-left">Description</th>
                 <th className="px-6 py-4 text-left">Created By</th>
+                <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {materials.map((m) => (
+              {paginatedMaterials.map((m) => (
                 <tr key={m.id} className="border-t hover:bg-gray-50">
                   <td className="px-6 py-4 font-semibold text-gray-800">
                     {m.name}
@@ -125,6 +152,23 @@ export default function ManagerMaterials() {
                   <td className="px-6 py-4 text-gray-600">
                     {m.created_by_name}
                   </td>
+
+                  <td className="px-6 py-4 text-center space-x-2">
+                    <button
+                      onClick={() => {
+                        setEditingMaterial(m)
+                        setForm({
+                          name: m.name,
+                          unit: m.unit,
+                          description: m.description,
+                        })
+                        setIsOpen(true)
+                      }}
+                      className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -132,12 +176,66 @@ export default function ManagerMaterials() {
         )}
       </div>
 
+      <div className="flex justify-between items-center p-4">
+        <div className="flex items-center gap-2 text-sm">
+          <span>Rows:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setCurrentPage(1)
+              setPageSize(Number(e.target.value)) 
+            }}
+            className="border px-2 py-1 rounded"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+          </select>
+        </div>
+
+        <div className="flex gap-2">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded-lg ${currentPage === page
+                  ? "bg-black text-white"
+                  : "border"
+                }`}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            className="px-4 py-2 border rounded-lg disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            className="px-4 py-2 border rounded-lg disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       {isOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
-            <h3 className="text-xl font-semibold mb-4">
-              Create Material
-            </h3>
+            <div className="flex items-center gap-1 mb-4">
+              <h3 className="text-xl font-semibold">
+                {editingMaterial ? "Update Material" : "Create Material"}
+              </h3>
+              <Plus className="text-black" />
+            </div>
 
             <div className="space-y-4">
               <input
@@ -149,14 +247,20 @@ export default function ManagerMaterials() {
                 className="w-full border rounded-lg px-3 py-2"
               />
 
-              <input
-                placeholder="Unit (kg, L, PC...)"
+              <select
                 value={form.unit}
                 onChange={(e) =>
                   setForm({ ...form, unit: e.target.value })
                 }
                 className="w-full border rounded-lg px-3 py-2"
-              />
+              >
+                <option value="">Select unit</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+                <option value="PC">PC</option>
+              </select>
 
               <textarea
                 placeholder="Description"
@@ -170,7 +274,10 @@ export default function ManagerMaterials() {
 
             <div className="flex justify-end gap-3 mt-6">
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  setIsOpen(false)
+                  setEditingMaterial(null)
+                }}
                 className="px-4 py-2 border rounded-lg"
               >
                 Cancel
@@ -181,7 +288,13 @@ export default function ManagerMaterials() {
                 disabled={creating}
                 className="px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50"
               >
-                {creating ? "Creating..." : "Create"}
+                {creating
+                  ? editingMaterial
+                    ? "Updating..."
+                    : "Creating..."
+                  : editingMaterial
+                    ? "Update"
+                    : "Create"}
               </button>
             </div>
           </div>

@@ -10,27 +10,27 @@ import type { Material } from "../../../types/material.type"
 
 export default function CreateProductRecipe() {
   const navigate = useNavigate()
-  const [categories,setCategories] = useState<Category[]>([])
-  const [materials,setMaterials] = useState<Material[]>([])
-  const [loading,setLoading] = useState(false)
-  const [form,setForm] = useState<CreateProductRecipePayload>({
-    category_id:0,
-    name:"",
-    yield_quantity:1,
-    yield_unit:"PC",
-    ingredients:[
+  const [categories, setCategories] = useState<Category[]>([])
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState<CreateProductRecipePayload>({
+    category_id: 0,
+    name: "",
+    yield_quantity: 1,
+    yield_unit: "PC",
+    ingredients: [
       {
-        material_id:0,
-        quantity:0,
-        quantity_unit:"G",
-        notes:""
+        material_id: 0,
+        quantity: 0,
+        quantity_unit: "G",
+        notes: ""
       }
     ]
   })
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchMeta()
-  },[])
+  }, [])
 
   const fetchMeta = async () => {
     try {
@@ -46,44 +46,44 @@ export default function CreateProductRecipe() {
   const addIngredient = () => {
     setForm({
       ...form,
-      ingredients:[
+      ingredients: [
         ...form.ingredients,
         {
-          material_id:0,
-          quantity:0,
-          quantity_unit:"G",
-          notes:""
+          material_id: 0,
+          quantity: 0,
+          quantity_unit: "G",
+          notes: ""
         }
       ]
     })
   }
 
   const updateIngredient = (
-    index:number,
-    field:keyof RecipeIngredientInput,
-    value:string | number
+    index: number,
+    field: keyof RecipeIngredientInput,
+    value: string | number
   ) => {
     const updated = [...form.ingredients]
     updated[index] = {
       ...updated[index],
-      [field]:value
+      [field]: value
     }
     setForm({
       ...form,
-      ingredients:updated
+      ingredients: updated
     })
   }
 
   const handleCreate = async () => {
-    try{
+    try {
       setLoading(true)
       await productRecipeApi.create(form)
       toast.success("Recipe created successfully")
       navigate("/manager/product-recipes")
-    }catch(err){
+    } catch (err) {
       console.error(err)
       toast.error("Failed to create recipe")
-    }finally{
+    } finally {
       setLoading(false)
     }
   }
@@ -103,10 +103,10 @@ export default function CreateProductRecipe() {
           <input
             className="w-full border rounded-lg p-2 mt-1"
             value={form.name}
-            onChange={(e)=>
+            onChange={(e) =>
               setForm({
                 ...form,
-                name:e.target.value
+                name: e.target.value
               })
             }
           />
@@ -120,10 +120,10 @@ export default function CreateProductRecipe() {
           <select
             className="w-full border rounded-lg p-2 mt-1"
             value={form.category_id}
-            onChange={(e)=>
+            onChange={(e) =>
               setForm({
                 ...form,
-                category_id:Number(e.target.value)
+                category_id: Number(e.target.value)
               })
             }
           >
@@ -131,7 +131,7 @@ export default function CreateProductRecipe() {
               Select category
             </option>
 
-            {categories.map(cat=>(
+            {categories.map(cat => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
@@ -149,11 +149,12 @@ export default function CreateProductRecipe() {
             <input
               type="number"
               className="w-full border rounded-lg p-2 mt-1"
+              min={1}
               value={form.yield_quantity}
-              onChange={(e)=>
+              onChange={(e) =>
                 setForm({
                   ...form,
-                  yield_quantity:Number(e.target.value)
+                  yield_quantity: Number(e.target.value)
                 })
               }
             />
@@ -167,10 +168,10 @@ export default function CreateProductRecipe() {
             <input
               className="w-full border rounded-lg p-2 mt-1"
               value={form.yield_unit}
-              onChange={(e)=>
+              onChange={(e) =>
                 setForm({
                   ...form,
-                  yield_unit:e.target.value
+                  yield_unit: e.target.value
                 })
               }
             />
@@ -182,14 +183,14 @@ export default function CreateProductRecipe() {
           Ingredients
         </h3>
 
-        {form.ingredients.map((ing,index)=>(
+        {form.ingredients.map((ing, index) => (
 
           <div key={index} className="flex gap-2 mb-2">
 
             <select
               className="border rounded p-2 w-1/3"
               value={ing.material_id}
-              onChange={(e)=>
+              onChange={(e) =>
                 updateIngredient(
                   index,
                   "material_id",
@@ -202,7 +203,7 @@ export default function CreateProductRecipe() {
                 Material
               </option>
 
-              {materials.map(m=>(
+              {materials.map(m => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
@@ -214,8 +215,9 @@ export default function CreateProductRecipe() {
               type="number"
               className="border rounded p-2 w-24"
               placeholder="Qty"
+              min={1}
               value={ing.quantity}
-              onChange={(e)=>
+              onChange={(e) =>
                 updateIngredient(
                   index,
                   "quantity",
@@ -224,23 +226,29 @@ export default function CreateProductRecipe() {
               }
             />
 
-            <input
+            <select
               className="border rounded p-2 w-20"
               value={ing.quantity_unit}
-              onChange={(e)=>
+              onChange={(e) =>
                 updateIngredient(
                   index,
                   "quantity_unit",
                   e.target.value
                 )
               }
-            />
+            >
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="l">l</option>
+              <option value="ml">ml</option>
+              <option value="PC">PC</option>
+            </select>
 
             <input
               className="border rounded p-2 flex-1"
               placeholder="Notes"
               value={ing.notes}
-              onChange={(e)=>
+              onChange={(e) =>
                 updateIngredient(
                   index,
                   "notes",
@@ -264,7 +272,7 @@ export default function CreateProductRecipe() {
         <div className="flex justify-end gap-3 mt-6">
 
           <button
-            onClick={()=>navigate(-1)}
+            onClick={() => navigate(-1)}
             className="px-4 py-2 border rounded-lg"
           >
             Cancel

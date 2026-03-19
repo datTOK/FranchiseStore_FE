@@ -1,14 +1,14 @@
-import { Album, ChefHat, CirclePile, CookingPot, LayoutDashboard, SquareChartGantt, User, Wheat } from 'lucide-react'
+import { Album, ChefHat, CirclePile, CookingPot, SquareChartGantt, Wheat } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const menu = [
-    { label: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
+    // { label: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
     { label: 'Category', path: '/manager/category', icon: Album },
     { label: 'Batch', path: '/manager/batch', icon: SquareChartGantt },
     { label: 'Products', path: '/manager/products', icon: CirclePile },
     { label: 'Product Recipes', path: '/manager/product-recipes', icon: CookingPot },
     { label: 'Materials', path: '/manager/materials', icon: Wheat },
-    { label: "Profile", path: "/manager/profile", icon: User }
+    // { label: "Profile", path: "/manager/profile", icon: User }
 ]
 
 export default function ManagerSidebar() {

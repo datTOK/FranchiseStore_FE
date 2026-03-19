@@ -28,7 +28,7 @@ import FRStaffProfile from "./fr_staff/FRStaffProfile/FRStaffProfile";
 import FRStaffPOSPage from "./fr_staff/FRStaffPOS/FRStaffPOS";
 import CentralKitchenLayout from "./central_kitchen/CentralKitchenLayout";
 import KitchenDashboard from "./central_kitchen/KitchenDashboard/KitchenDashboard";
-import ManagerDashboard from "./manager/ManagerDashboard/ManagerDashboard";
+// import ManagerDashboard from "./manager/ManagerDashboard/ManagerDashboard";
 import ManagerLayout from "./manager/ManagerLayout";
 import ManagerReports from "./manager/ManagerReports/ManagerReports";
 import SupplyCordinatorLayout from "./supply_cordinator/SupplyCordinatorLayout";
@@ -107,7 +107,7 @@ export default function App() {
     </Route>
 
     <Route path="/manager" element={<ManagerLayout />}>
-      <Route path="dashboard" element={<ManagerDashboard />} />
+      {/* <Route path="dashboard" element={<ManagerDashboard />} /> */}
       <Route path="category" element={<ManagerCategory />} />
       <Route path="batch" element={<ManagerMaterialBatches />} />
       <Route path="products" element={<ManagerProducts />} />

@@ -25,7 +25,6 @@ export interface CreateProductPayload {
   name: string
   image_url?: string
   uom: string
-  product_type: 'FINISHED' | 'RAW_MATERIAL'
 }
 
 export interface UpdateProductPayload {
@@ -33,7 +32,6 @@ export interface UpdateProductPayload {
   name: string
   image_url?: string
   uom: string
-  product_type: 'FINISHED' | 'RAW_MATERIAL'
   is_active: boolean
 }
 

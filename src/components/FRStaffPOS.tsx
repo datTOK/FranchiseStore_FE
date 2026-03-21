@@ -42,6 +42,7 @@ type Props = {
   setSearch: (v: string) => void;
   customerName: string;
   setCustomerName: (v: string) => void;
+  priceByProductId: Record<number, number>;
   historySearch: string;
   setHistorySearch: (v: string) => void;
   salesOrders: SalesOrderListRow[];
@@ -88,6 +89,7 @@ export default function FRStaffPOS(props: Props) {
     setSearch,
     customerName,
     setCustomerName,
+    priceByProductId,
     historySearch,
     setHistorySearch,
     salesOrders,
@@ -132,14 +134,31 @@ export default function FRStaffPOS(props: Props) {
     return salesOrders.slice(start, start + PAGE_SIZE);
   }, [effectiveHistoryPage, salesOrders]);
 
+  const billDetailTotal = useMemo(() => {
+    if (!salesOrderDetail) return 0;
+    const declared = toNumber(salesOrderDetail.total_amount ?? 0);
+    if (declared > 0) return declared;
+
+    return (salesOrderDetail.items || []).reduce((sum, it) => {
+      const pid = Number(it.product_id ?? 0);
+      const qty = toNumber(it.quantity);
+      const apiTotal = it.total_price != null ? toNumber(it.total_price) : 0;
+      const apiUnit = toNumber(it.unit_price);
+      const mapPrice = pid > 0 ? toNumber(priceByProductId[pid]) : 0;
+      const derivedFromTotal = qty > 0 && apiTotal > 0 ? apiTotal / qty : 0;
+      const unit = apiUnit > 0 ? apiUnit : derivedFromTotal > 0 ? derivedFromTotal : mapPrice;
+      const line = apiTotal > 0 ? apiTotal : qty * unit;
+      return sum + line;
+    }, 0);
+  }, [priceByProductId, salesOrderDetail]);
+
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-2">Point of Sale</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="text-lg font-semibold">Inventory</div>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -156,7 +175,7 @@ export default function FRStaffPOS(props: Props) {
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
                   <th className="text-left px-4 py-3 whitespace-nowrap">SKU & Name</th>
-                  <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
+                  <th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
                   <th className="text-left px-4 py-3 whitespace-nowrap">Action</th>
                 </tr>
               </thead>
@@ -229,7 +248,7 @@ export default function FRStaffPOS(props: Props) {
                 <thead className="bg-gray-50 text-gray-700">
                   <tr>
                     <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
-                    <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
+                    <th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
                     <th className="text-left px-4 py-3 whitespace-nowrap">Price</th>
                     <th className="text-left px-4 py-3 whitespace-nowrap">Line Total</th>
                     <th className="text-left px-4 py-3 whitespace-nowrap">Remove</th>
@@ -260,17 +279,7 @@ export default function FRStaffPOS(props: Props) {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <input
-                            type="number"
-                            min={0}
-                            value={r.price}
-                            onChange={(e) =>
-                              setCartRow(r.product_id, {
-                                price: e.target.value === "" ? 0 : Number(e.target.value),
-                              })
-                            }
-                            className="w-[120px] px-3 py-2 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-orange-200"
-                          />
+                          <div className="whitespace-nowrap">{formatMoney(r.price)}</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap font-semibold">
                           {formatMoney(lineTotal)}
@@ -449,7 +458,7 @@ export default function FRStaffPOS(props: Props) {
                           <thead className="bg-gray-50 text-gray-700">
                             <tr>
                               <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
-                              <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
+                              <th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
                               <th className="text-left px-4 py-3 whitespace-nowrap">Price</th>
                               <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
                             </tr>
@@ -459,13 +468,17 @@ export default function FRStaffPOS(props: Props) {
                               const pid = Number(it.product_id ?? 0);
                               const name = it.product_name || (pid ? `#${pid}` : `Item ${idx + 1}`);
                               const qty = toNumber(it.quantity);
-                              const price = toNumber(it.unit_price);
-                              const lineTotal =
-                                it.total_price != null ? toNumber(it.total_price) : qty * price;
+                              const apiTotal = it.total_price != null ? toNumber(it.total_price) : 0;
+                              const apiUnit = toNumber(it.unit_price);
+                              const mapPrice = pid > 0 ? toNumber(priceByProductId[pid]) : 0;
+                              const derivedFromTotal = qty > 0 && apiTotal > 0 ? apiTotal / qty : 0;
+                              const price =
+                                apiUnit > 0 ? apiUnit : derivedFromTotal > 0 ? derivedFromTotal : mapPrice;
+                              const lineTotal = apiTotal > 0 ? apiTotal : qty * price;
                               return (
                                 <tr
                                   key={it.id ?? it.order_item_id ?? `${pid}-${idx}`}
-                                  className="border-t"
+                                  className="border-t border-gray-100"
                                 >
                                   <td className="px-4 py-3">{name}</td>
                                   <td className="px-4 py-3 whitespace-nowrap">{qty}</td>
@@ -477,7 +490,7 @@ export default function FRStaffPOS(props: Props) {
                               );
                             })}
                             {(salesOrderDetail.items || []).length === 0 ? (
-                              <tr className="border-t">
+                              <tr className="border-t border-gray-100">
                                 <td className="px-4 py-6 text-gray-500" colSpan={4}>
                                   No items
                                 </td>
@@ -486,6 +499,13 @@ export default function FRStaffPOS(props: Props) {
                           </tbody>
                         </table>
                       </div>
+
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t-2 border-gray-300">
+                      <div className="text-sm text-gray-600">Bill Total</div>
+                      <div className="text-lg font-bold text-orange-600">
+                        {formatMoney(billDetailTotal)}
+                      </div>
+                    </div>
                     </>
                   ) : (
                     <div className="text-gray-500">Select a bill to view details</div>

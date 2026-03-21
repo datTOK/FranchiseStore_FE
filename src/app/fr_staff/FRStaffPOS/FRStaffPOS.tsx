@@ -238,7 +238,21 @@ export default function FRStaffPOSPage() {
   };
 
   const setCartRow = (pid: number, patch: Partial<CartRow>) => {
-    setCart((prev) => prev.map((r) => (r.product_id === pid ? { ...r, ...patch } : r)));
+    setCart((prev) =>
+      prev.map((r) => {
+        if (r.product_id !== pid) return r;
+
+        const lockedPrice = toNumber(salePriceByProductId[pid]) || r.price;
+        const nextQty =
+          patch.quantity === undefined ? r.quantity : Math.max(1, toNumber(patch.quantity));
+
+        return {
+          ...r,
+          quantity: nextQty,
+          price: lockedPrice,
+        };
+      }),
+    );
   };
 
   const total = useMemo(() => {
@@ -329,6 +343,7 @@ export default function FRStaffPOSPage() {
       setSearch={setSearch}
       customerName={customerName}
       setCustomerName={setCustomerName}
+      priceByProductId={salePriceByProductId}
       historySearch={historySearch}
       setHistorySearch={setHistorySearch}
       salesOrders={salesOrders}

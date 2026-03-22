@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, CheckCircle2, Truck, Hourglass, RefreshCw, Eye } from "lucide-react";
+import { ClipboardList, CheckCircle2, Truck, Hourglass, RefreshCw, Eye, XCircle } from "lucide-react";
 import Card from "../../../components/Card";
 import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
@@ -65,6 +65,9 @@ function normStatus(s: OrderStatus) {
 function canConfirm(s: OrderStatus) {
   return normStatus(s) === "SUBMITTED";
 }
+function canReject(s: OrderStatus) {
+  return normStatus(s) === "CONFIRMED";
+}
 
 type ErrorShape = {
   message?: string;
@@ -95,6 +98,9 @@ const [products, setProducts] = useState<ProductItem[]>([]);
   const [detail, setDetail] = useState<OrderDetail | null>(null);
 
   const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>({});
+  const [openRejectModal, setOpenRejectModal] = useState(false);
+const [rejectingOrder, setRejectingOrder] = useState<OrderRow | null>(null);
+const [rejectLoading, setRejectLoading] = useState(false);
 
   const fetchAll = async () => {
   setError("");
@@ -127,7 +133,10 @@ setProducts([]);
   useEffect(() => {
     fetchAll();
   }, []);
-
+const getStoreName = (storeId: number) => {
+  const found = stores.find((s) => s.id === storeId);
+  return found?.name ?? `Store ${storeId}`;
+};
   const filtered = useMemo(() => {
   const q = (search || "").trim().toLowerCase();
   return orders.filter((o) => {
@@ -201,9 +210,34 @@ setProducts([]);
     setDetailLoading(false);
   };
   
-  const getStoreName = (storeId: number) => {
-  const found = stores.find((s) => s.id === storeId);
-  return found?.name ?? `Store ${storeId}`;
+  
+const openRejectConfirm = (order: OrderRow) => {
+  setRejectingOrder(order);
+  setOpenRejectModal(true);
+};
+
+const closeRejectConfirm = () => {
+  if (rejectLoading) return;
+  setOpenRejectModal(false);
+  setRejectingOrder(null);
+};
+
+const confirmRejectOrder = async () => {
+  if (!rejectingOrder) return;
+
+  setError("");
+  setRejectLoading(true);
+
+  try {
+    await orderApi.reject(rejectingOrder.id);
+    setOpenRejectModal(false);
+    setRejectingOrder(null);
+    await fetchAll();
+  } catch (e: unknown) {
+    setError(getErrorMessage(e, "Reject order failed"));
+  } finally {
+    setRejectLoading(false);
+  }
 };
 
   return (
@@ -267,10 +301,11 @@ setProducts([]);
               className="px-4 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
             >
               <option value="ALL">All Status</option>
-              <option value="SUBMITTED">SUBMITTED</option>
-              <option value="CONFIRMED">CONFIRMED</option>
-              <option value="ISSUED">ISSUED</option>
-              <option value="DELIVERED">DELIVERED</option>
+<option value="SUBMITTED">SUBMITTED</option>
+<option value="CONFIRMED">CONFIRMED</option>
+<option value="ISSUED">ISSUED</option>
+<option value="DELIVERED">DELIVERED</option>
+<option value="REJECTED">REJECTED</option>
             </select>
           </div>
         </div>
@@ -305,23 +340,35 @@ setProducts([]);
   <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
   <td className="px-4 py-3">{normStatus(o.status)}</td>
 
-                  <td className="px-4 py-3">
+                  
+  <td className="px-4 py-3">
   <div className="flex flex-wrap gap-2">
-    <button
-      disabled={!canConfirm(o.status) || loading}
-      onClick={() => onAction(() => orderApi.confirm(o.id))}
-      className={[
-        "px-3 py-1.5 rounded-lg border",
-        canConfirm(o.status)
-          ? "border-yellow-300 bg-yellow-50 hover:bg-yellow-100"
-          : "border-gray-200 bg-gray-50 text-gray-400",
-      ].join(" ")}
-    >
-      Confirm
-    </button>
+    {canConfirm(o.status) ? (
+      <button
+        disabled={loading}
+        onClick={() => onAction(() => orderApi.confirm(o.id))}
+        className="px-3 py-1.5 rounded-lg border border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
+      >
+        Confirm
+      </button>
+    ) : null}
+
+    {canReject(o.status) ? (
+      <button
+        disabled={loading || rejectLoading}
+        onClick={() => openRejectConfirm(o)}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700"
+      >
+        <XCircle className="w-4 h-4" />
+        Reject
+      </button>
+    ) : null}
+
+    {!canConfirm(o.status) && !canReject(o.status) ? (
+      <span className="text-xs text-gray-400">-</span>
+    ) : null}
   </div>
 </td>
-
                   <td className="px-4 py-3">
   <button
     onClick={() => openOrderDetail(o.id)}
@@ -415,6 +462,65 @@ setProducts([]);
                   </div>
                 </>
               ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+            {openRejectModal ? (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[60]">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="font-semibold text-lg text-red-600">Confirm Reject</div>
+              <button
+                onClick={closeRejectConfirm}
+                disabled={rejectLoading}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="text-sm text-gray-700">
+                Are you sure you want to reject this order?
+              </div>
+
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Order Code:</span>{" "}
+                  <span className="font-semibold">{rejectingOrder?.order_code ?? "-"}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Store:</span>{" "}
+                  <span className="font-semibold">
+                    {rejectingOrder ? getStoreName(rejectingOrder.store_id) : "-"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Status:</span>{" "}
+                  <span className="font-semibold">
+                    {rejectingOrder ? normStatus(rejectingOrder.status) : "-"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={closeRejectConfirm}
+                  disabled={rejectLoading}
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-60"
+                >
+                  No
+                </button>
+
+                <button
+                  onClick={confirmRejectOrder}
+                  disabled={rejectLoading}
+                  className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {rejectLoading ? "Rejecting..." : "Yes, Reject"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

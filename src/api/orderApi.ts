@@ -1,6 +1,13 @@
 import axiosClient from "./axiosClient";
 
-export type OrderStatus = "SUBMITTED" | "CONFIRMED" | "ISSUED" | "DELIVERED" | string;
+export type OrderStatus =
+  | "SUBMITTED"
+  | "CONFIRMED"
+  | "ISSUED"
+  | "DELIVERED"
+  | "REJECTED"
+  | "CANCELLED"
+  | string;
 
 export type OrderRow = {
   id: number;
@@ -73,6 +80,14 @@ export async function confirmOrder(id: number) {
   const res = await axiosClient.patch(`/orders/${id}/confirm`);
   return res.data;
 }
+export async function rejectOrder(id: number) {
+  const res = await axiosClient.patch(`/orders/${id}/reject`);
+  return res.data;
+}
+export async function cancelOrder(id: number) {
+  const res = await axiosClient.patch(`/orders/${id}/cancel`);
+  return res.data;
+}
 
 export async function issueOrder(id: number) {
   const res = await axiosClient.patch(`/orders/${id}/issue`);
@@ -89,6 +104,8 @@ const orderApi = {
   getById: getOrderDetail,
   create: createOrder,
   confirm: confirmOrder,
+  reject: rejectOrder,
+  cancel: cancelOrder,
   issue: issueOrder,
   deliver: deliverOrder,
 };

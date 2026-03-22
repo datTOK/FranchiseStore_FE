@@ -8,6 +8,7 @@ import {
   Eye,
   Plus,
   Trash2,
+  XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Card from "../../../components/Card";
@@ -75,6 +76,9 @@ function getProductSku(products: ProductItem[], productId: number) {
 function normStatus(s: OrderStatus) {
   return String(s || "").toUpperCase();
 }
+function canCancel(s: OrderStatus) {
+  return normStatus(s) === "SUBMITTED";
+}
 
 type ErrorShape = {
   message?: string;
@@ -120,6 +124,9 @@ const [stores, setStores] = useState<Store[]>([]);
   const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>(
     {}
   );
+  const [openCancelModal, setOpenCancelModal] = useState(false);
+const [cancelingOrder, setCancelingOrder] = useState<OrderRow | null>(null);
+const [cancelLoading, setCancelLoading] = useState(false);
 
   const fetchAll = useCallback(async (showRefreshing = false) => {
   setError("");
@@ -254,7 +261,35 @@ const delivered = useMemo(
   //     0
   //   );
   // }, [createRows]);
+const openCancelConfirm = (order: OrderRow) => {
+  setCancelingOrder(order);
+  setOpenCancelModal(true);
+};
 
+const closeCancelConfirm = () => {
+  if (cancelLoading) return;
+  setOpenCancelModal(false);
+  setCancelingOrder(null);
+};
+
+const confirmCancelOrder = async () => {
+  if (!cancelingOrder) return;
+
+  setError("");
+  setCancelLoading(true);
+
+  try {
+    await orderApi.cancel(cancelingOrder.id);
+    toast.success("Order cancelled successfully");
+    setOpenCancelModal(false);
+    setCancelingOrder(null);
+    await fetchAll(true);
+  } catch (e: unknown) {
+    toast.error(getErrorMessage(e, "Cancel order failed"));
+  } finally {
+    setCancelLoading(false);
+  }
+};
   const addRow = () => {
   setCreateRows((prev) => [
     ...prev,
@@ -400,6 +435,7 @@ await fetchAll(true);
               <option value="CONFIRMED">CONFIRMED</option>
               <option value="ISSUED">ISSUED</option>
               <option value="DELIVERED">DELIVERED</option>
+              <option value="CANCELLED">CANCELLED</option>
             </select>
           </div>
         </div>
@@ -426,6 +462,7 @@ await fetchAll(true);
                 </th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Actions</th>
                 
                 <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
               </tr>
@@ -444,6 +481,22 @@ await fetchAll(true);
                   <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
                   <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
                   <td className="px-4 py-3">{normStatus(o.status)}</td>
+                  <td className="px-4 py-3">
+  <div className="flex flex-wrap gap-2">
+    {canCancel(o.status) ? (
+      <button
+        disabled={loading || refreshing || cancelLoading}
+        onClick={() => openCancelConfirm(o)}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-60"
+      >
+        <XCircle className="w-4 h-4" />
+        Cancel
+      </button>
+    ) : (
+      <span className="text-xs text-gray-400">-</span>
+    )}
+  </div>
+</td>
 
                   
 
@@ -460,7 +513,7 @@ await fetchAll(true);
 
               {!loading && filtered.length === 0 ? (
                 <tr className="border-t">
-                  <td className="px-4 py-6 text-gray-500" colSpan={7}>
+                  <td className="px-4 py-6 text-gray-500" colSpan={8}>
                     No orders
                   </td>
                 </tr>
@@ -666,7 +719,67 @@ await fetchAll(true);
           </div>
         </div>
       ) : null}
+      {openCancelModal ? (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[60]">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="font-semibold text-lg text-red-600">Confirm Cancel</div>
+              <button
+                onClick={closeCancelConfirm}
+                disabled={cancelLoading}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Close
+              </button>
+            </div>
 
+            <div className="p-4 space-y-4">
+              <div className="text-sm text-gray-700">
+                Are you sure you want to cancel this order?
+              </div>
+
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2 text-sm">
+                <div>
+                  <span className="text-gray-500">Order Code:</span>{" "}
+                  <span className="font-semibold">{cancelingOrder?.order_code ?? "-"}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Store:</span>{" "}
+                  <span className="font-semibold">
+                    {cancelingOrder
+                      ? storeMap.get(Number(cancelingOrder.store_id)) || "-"
+                      : "-"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Status:</span>{" "}
+                  <span className="font-semibold">
+                    {cancelingOrder ? normStatus(cancelingOrder.status) : "-"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={closeCancelConfirm}
+                  disabled={cancelLoading}
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-60"
+                >
+                  No
+                </button>
+
+                <button
+                  onClick={confirmCancelOrder}
+                  disabled={cancelLoading}
+                  className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {cancelLoading ? "Canceling..." : "Yes, Cancel"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {/* DETAIL MODAL */}
       {openDetail ? (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">

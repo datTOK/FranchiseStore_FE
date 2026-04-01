@@ -16,5 +16,5 @@ export function doLogout() {
   localStorage.setItem("logoutAt", String(Date.now()));
 
   // 4) QUAN TRỌNG: reload trang để reset toàn bộ state SPA
-  window.location.replace("/");
+  window.location.replace("/login");
 }

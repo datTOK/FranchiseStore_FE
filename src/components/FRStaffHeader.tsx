@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from "react"
 import axiosClient from "./../api/axiosClient" 
-import { doLogout } from "../app/auth/logout";
+import toast from 'react-hot-toast';
+// import { doLogout } from "../app/auth/logout";
 export default function FRStaffHeader() {
   const navigate = useNavigate();
   type Me = { id?: number; name?: string; role?: string; username?: string }
@@ -24,6 +25,15 @@ useEffect(() => {
   }
   fetchMe()
 }, [])
+
+const handleLogout = () => {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("idToken")
+
+    toast.success("Logged out successfully 👋")
+
+    navigate("/login")
+  }
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between bg-zinc-100/80 px-6 backdrop-blur supports-[backdrop-filter]:bg-zinc-100/60">
@@ -71,7 +81,7 @@ useEffect(() => {
             </button>
             <button
   type="button"
-  onClick={() => doLogout()}
+  onClick={handleLogout}
   className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
 >
   Logout

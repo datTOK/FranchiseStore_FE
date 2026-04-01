@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'https://franchisestore-be.onrender.com/api',
+  baseURL: 'https://franchisestore-be.onrender.com/api', 
   headers: {
     'Content-Type': 'application/json',
   },

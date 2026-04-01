@@ -73,9 +73,13 @@ function getProductSku(products: ProductItem[], productId: number) {
   return sku ? String(sku) : "-";
 }
 
+
+// điều kiện để hiển thị nút Cancel: chỉ khi status là SUBMITTED thì mới được phép cancel
 function normStatus(s: OrderStatus) {
   return String(s || "").toUpperCase();
 }
+
+
 function canCancel(s: OrderStatus) {
   return normStatus(s) === "SUBMITTED";
 }
@@ -124,6 +128,7 @@ const [stores, setStores] = useState<Store[]>([]);
   const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>(
     {}
   );
+
   const [openCancelModal, setOpenCancelModal] = useState(false);
 const [cancelingOrder, setCancelingOrder] = useState<OrderRow | null>(null);
 const [cancelLoading, setCancelLoading] = useState(false);
@@ -271,7 +276,7 @@ const closeCancelConfirm = () => {
   setOpenCancelModal(false);
   setCancelingOrder(null);
 };
-
+//api canvle
 const confirmCancelOrder = async () => {
   if (!cancelingOrder) return;
 
@@ -282,8 +287,8 @@ const confirmCancelOrder = async () => {
     await orderApi.cancel(cancelingOrder.id);
     toast.success("Order cancelled successfully");
     setOpenCancelModal(false);
-    setCancelingOrder(null);
-    await fetchAll(true);
+    setCancelingOrder(null);//xóa order đang chọn
+    await fetchAll(true);//gọi lại list order để load dữ liệu mới
   } catch (e: unknown) {
     toast.error(getErrorMessage(e, "Cancel order failed"));
   } finally {
@@ -306,6 +311,7 @@ const confirmCancelOrder = async () => {
       prev.map((r, i) => (i === idx ? { ...r, ...patch } : r))
     );
   };
+  // khi chọn product thì tự động điền unit price dựa trên product đã chọn
   const getProductUnitPrice = (productId: number): number => {
   const product = products.find((p) => Number(p.id) === Number(productId));
   if (!product) return 0;
@@ -331,7 +337,7 @@ const confirmCancelOrder = async () => {
       typeof r.quantity === "string" ? Number(r.quantity) : r.quantity,
     unit_price: r.unit_price,
   }))
-      .filter((r) => Number.isFinite(r.product_id) && r.product_id > 0)
+      .filter((r) => Number.isFinite(r.product_id) && r.product_id > 0)// chỉ lấy những row có chọn product
       .map((r) => ({
         product_id: Number(r.product_id),
         quantity: Math.max(1, Number(r.quantity) || 1),
@@ -449,7 +455,7 @@ await fetchAll(true);
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-700">
               <tr>
-                
+            
                 <th className="text-left px-4 py-3 whitespace-nowrap">
                   Order Code
                 </th>
@@ -475,6 +481,7 @@ await fetchAll(true);
                   <td className="px-4 py-3 font-medium">{o.order_code}</td>
 
                   <td className="px-4 py-3">
+                  
   {storeMap.get(Number(o.store_id)) || "-"}
 </td>
                   <td className="px-4 py-3">{formatDate(o.order_date)}</td>
@@ -484,8 +491,9 @@ await fetchAll(true);
                   <td className="px-4 py-3">
   <div className="flex flex-wrap gap-2">
     {canCancel(o.status) ? (
-      <button
-        disabled={loading || refreshing || cancelLoading}
+  // chỉ khi status là SUBMITTED thì mới được phép cancel
+  <button
+        disabled={loading || refreshing || cancelLoading} 
         onClick={() => openCancelConfirm(o)}
         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-60"
       >
@@ -616,7 +624,9 @@ await fetchAll(true);
                               </select>
                             </td>
 
-                            <td className="px-4 py-3 w-[140px]">
+
+
+                            <td className="px-4 py-3 w-[140px]"> 
                               <input
                                 type="number"
                                 min={1}

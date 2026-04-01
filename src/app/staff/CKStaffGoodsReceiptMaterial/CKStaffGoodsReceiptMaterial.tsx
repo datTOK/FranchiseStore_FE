@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { AxiosError } from "axios";
 import toast from "react-hot-toast";
 import {
@@ -67,6 +68,8 @@ const [rawRows, setRawRows] = useState<GoodsReceiptMaterialRow[]>([]);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [completeNotes, setCompleteNotes] = useState<string>("");
   const [rejectNotes, setRejectNotes] = useState<string>("");
+  const [contentLeft, setContentLeft] = useState<number>(0);
+const [contentWidth, setContentWidth] = useState<number>(window.innerWidth);
 
 const buildListRows = (data: GoodsReceiptMaterialRow[]): GoodsReceiptMaterialRow[] => {
   const map = new Map<number, GoodsReceiptMaterialRow>();
@@ -140,6 +143,45 @@ const buildDetailFromRows = (
   useEffect(() => {
     void loadGoodsReceiptMaterials();
   }, []);
+  useEffect(() => {
+  const updateContentBounds = () => {
+    const mainEl = document.getElementById("ckstaff-main");
+    const contentShellEl = document.getElementById("ckstaff-content-shell");
+    const sidebarEl = document.getElementById("ckstaff-sidebar");
+
+    if (mainEl) {
+      const rect = mainEl.getBoundingClientRect();
+      setContentLeft(rect.left);
+      setContentWidth(rect.width);
+      return;
+    }
+
+    if (contentShellEl) {
+      const rect = contentShellEl.getBoundingClientRect();
+      setContentLeft(rect.left);
+      setContentWidth(rect.width);
+      return;
+    }
+
+    if (sidebarEl) {
+      const rect = sidebarEl.getBoundingClientRect();
+      const left = rect.right;
+      setContentLeft(left);
+      setContentWidth(window.innerWidth - left);
+      return;
+    }
+
+    setContentLeft(0);
+    setContentWidth(window.innerWidth);
+  };
+
+  updateContentBounds();
+  window.addEventListener("resize", updateContentBounds);
+
+  return () => {
+    window.removeEventListener("resize", updateContentBounds);
+  };
+}, []);
 
   const handleViewDetail = async (id: number): Promise<void> => {
   try {
@@ -338,12 +380,30 @@ setCompleteNotes("");
         )}
       </div>
 
-      {openDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            <div className="sticky top-0 flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-4">
-              <div>
-                <h2 className="text-xl font-bold text-zinc-900">
+  {openDetail
+  ? createPortal(
+      <div
+        className="fixed top-0 z-[9999] bg-black/40"
+        style={{
+          left: contentLeft,
+          width: contentWidth,
+          height: "100vh",
+        }}
+        onClick={closeDetailModal}
+      >
+        <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded-3xl bg-white shadow-2xl"
+            style={{
+              maxWidth: "1100px",
+              maxHeight: "calc(100vh - 32px)",
+              overflowY: "auto",
+            }}
+          >
+            <div className="sticky top-0 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-4 sm:px-6">
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-zinc-900 sm:text-xl">
                   Goods Receipt Material Detail
                 </h2>
                 <p className="text-sm text-zinc-500">
@@ -354,13 +414,13 @@ setCompleteNotes("");
               <button
                 type="button"
                 onClick={closeDetailModal}
-                className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="shrink-0 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
               >
                 Close
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {detailLoading || !detail ? (
                 <div className="py-10 text-center text-sm text-zinc-500">
                   Loading details...
@@ -419,9 +479,6 @@ setCompleteNotes("");
                       </div>
                     </div>
 
-                    
-                    
-
                     <div className="rounded-2xl bg-zinc-50 p-4">
                       <div className="text-xs font-medium uppercase text-zinc-500">
                         Created At
@@ -441,7 +498,7 @@ setCompleteNotes("");
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
                       <FileText size={18} className="text-zinc-700" />
                       <h3 className="text-lg font-semibold text-zinc-900">
@@ -458,15 +515,9 @@ setCompleteNotes("");
                         <table className="min-w-full text-sm">
                           <thead>
                             <tr className="border-b border-zinc-200 text-left text-zinc-500">
-                              <th className="px-4 py-3 font-medium">
-                                Material ID
-                              </th>
-                              <th className="px-4 py-3 font-medium">
-                                Material Name
-                              </th>
-                              <th className="px-4 py-3 font-medium">
-                                Quantity
-                              </th>
+                              <th className="px-4 py-3 font-medium">Material ID</th>
+                              <th className="px-4 py-3 font-medium">Material Name</th>
+                              <th className="px-4 py-3 font-medium">Quantity</th>
                               <th className="px-4 py-3 font-medium">Unit</th>
                             </tr>
                           </thead>
@@ -499,7 +550,7 @@ setCompleteNotes("");
 
                   {detail.status === "PENDING" && (
                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
                         <div className="mb-4 flex items-center gap-2">
                           <CheckCircle2 size={18} className="text-emerald-600" />
                           <h3 className="text-lg font-semibold text-zinc-900">
@@ -529,7 +580,7 @@ setCompleteNotes("");
                         </button>
                       </div>
 
-                      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
                         <div className="mb-4 flex items-center gap-2">
                           <XCircle size={18} className="text-rose-600" />
                           <h3 className="text-lg font-semibold text-zinc-900">
@@ -565,7 +616,10 @@ setCompleteNotes("");
             </div>
           </div>
         </div>
-      )}
+      </div>,
+      document.body
+    )
+  : null}
     </div>
   );
 }

@@ -1,11 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, CheckCircle2, Truck, Hourglass, RefreshCw, Eye, XCircle } from "lucide-react";
+import {
+  ClipboardList,
+  CheckCircle2,
+  Truck,
+  Hourglass,
+  RefreshCw,
+  Eye,
+  XCircle,
+} from "lucide-react";
+
 import Card from "../../../components/Card";
-import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
+import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import productApi, { type ProductItem } from "../../../api/productApi";
 import { storeApi } from "../../../api/store.api";
 import type { Store } from "../../../types/store.type";
+
+/* =========================
+   Types
+========================= */
 
 type OrderItemRow = {
   order_item_id: number;
@@ -30,6 +43,15 @@ type OrderDetail = {
   items?: OrderItemRow[];
 };
 
+type ErrorShape = {
+  message?: string;
+  response?: { data?: { message?: string } };
+};
+
+/* =========================
+   Helpers
+========================= */
+
 function toNumber(v: string | number | undefined) {
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) ? n : 0;
@@ -47,6 +69,23 @@ function formatDate(iso: string | null | undefined) {
   return d.toLocaleDateString("vi-VN");
 }
 
+function normStatus(s: OrderStatus) {
+  return String(s || "").toUpperCase();
+}
+
+function canConfirm(s: OrderStatus) {
+  return normStatus(s) === "SUBMITTED";
+}
+
+function canReject(s: OrderStatus) {
+  return normStatus(s) === "CONFIRMED";
+}
+
+function getErrorMessage(e: unknown, fallback: string) {
+  const err = e as ErrorShape;
+  return err?.response?.data?.message || err?.message || fallback;
+}
+
 function getProductSku(products: ProductItem[], productId: number) {
   const found = products.find((p) => Number(p.id) === Number(productId));
   if (!found) return "-";
@@ -58,108 +97,123 @@ function getProductSku(products: ProductItem[], productId: number) {
   return sku ? String(sku) : "-";
 }
 
-function normStatus(s: OrderStatus) {
-  return String(s || "").toUpperCase();
-}
-
-function canConfirm(s: OrderStatus) {
-  return normStatus(s) === "SUBMITTED";
-}
-function canReject(s: OrderStatus) {
-  return normStatus(s) === "CONFIRMED";
-}
-
-type ErrorShape = {
-  message?: string;
-  response?: { data?: { message?: string } };
-};
-
-function getErrorMessage(e: unknown, fallback: string) {
-  const err = e as ErrorShape;
-  return err?.response?.data?.message || err?.message || fallback;
-}
-
+/* =========================
+   Main Component
+========================= */
 
 export default function StaffOrder() {
+  /* =========================
+     State
+  ========================= */
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
-const [stores, setStores] = useState<Store[]>([]);
-const [products, setProducts] = useState<ProductItem[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
 
-  // Detail modal
+  // detail modal
   const [openDetail, setOpenDetail] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [detail, setDetail] = useState<OrderDetail | null>(null);
-
   const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>({});
+
+  // reject modal
   const [openRejectModal, setOpenRejectModal] = useState(false);
-const [rejectingOrder, setRejectingOrder] = useState<OrderRow | null>(null);
-const [rejectLoading, setRejectLoading] = useState(false);
+  const [rejectingOrder, setRejectingOrder] = useState<OrderRow | null>(null);
+  const [rejectLoading, setRejectLoading] = useState(false);
+
+  /* =========================
+     Fetch
+  ========================= */
 
   const fetchAll = async () => {
-  setError("");
-  setLoading(true);
+    setError("");
+    setLoading(true);
 
-  try {
-    const [orderRes, storeRes, productRes] = await Promise.all([
-  orderApi.getAll(),
-  storeApi.getAll(),
-  productApi.getAll(),
-]);
+    try {
+      const [orderRes, storeRes, productRes] = await Promise.all([
+        orderApi.getAll(),
+        storeApi.getAll(),
+        productApi.getAll(),
+      ]);
 
-const orderData = Array.isArray(orderRes?.data) ? orderRes.data : [];
-const storeData = Array.isArray(storeRes?.data?.data) ? storeRes.data.data : [];
-const productData = Array.isArray(productRes?.data) ? productRes.data : [];
+      const orderData = Array.isArray(orderRes?.data) ? orderRes.data : [];
+      const storeData = Array.isArray(storeRes?.data?.data) ? storeRes.data.data : [];
+      const productData = Array.isArray(productRes?.data) ? productRes.data : [];
 
-setOrders(orderData);
-setStores(storeData);
-setProducts(productData);
-  } catch (e: unknown) {
-    setError(getErrorMessage(e, "Load orders failed"));
-    setOrders([]);
-setStores([]);
-setProducts([]);
-  } finally {
-    setLoading(false);
-  }
-};
+      setOrders(orderData);
+      setStores(storeData);
+      setProducts(productData);
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Load orders failed"));
+      setOrders([]);
+      setStores([]);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchAll();
   }, []);
-const getStoreName = (storeId: number) => {
-  const found = stores.find((s) => s.id === storeId);
-  return found?.name ?? `Store ${storeId}`;
-};
+  
+
+  /* =========================
+     Derived data
+  ========================= */
+
+  const getStoreName = (storeId: number) => {
+    const found = stores.find((s) => s.id === storeId);
+    return found?.name ?? `Store ${storeId}`;
+  };
+
   const filtered = useMemo(() => {
-  const q = (search || "").trim().toLowerCase();
-  return orders.filter((o) => {
-    const matchSearch =
-      !q ||
-      String(o.order_code || "").toLowerCase().includes(q) ||
-      getStoreName(o.store_id).toLowerCase().includes(q);
+    const q = (search || "").trim().toLowerCase();
 
-    const matchStatus =
-      statusFilter === "ALL" ? true : normStatus(o.status) === normStatus(statusFilter);
+    return orders.filter((o) => {
+      const matchSearch =
+        !q ||
+        String(o.order_code || "").toLowerCase().includes(q) ||
+        getStoreName(o.store_id).toLowerCase().includes(q);
 
-    return matchSearch && matchStatus;
-  });
-}, [orders, stores, search, statusFilter]);
+      const matchStatus =
+        statusFilter === "ALL"
+          ? true
+          : normStatus(o.status) === normStatus(statusFilter);
+
+      return matchSearch && matchStatus;
+    });
+  }, [orders, stores, search, statusFilter]);
 
   const total = orders.length;
-  const pending = useMemo(() => orders.filter((o) => normStatus(o.status) === "SUBMITTED").length, [orders]);
-  const issued = useMemo(() => orders.filter((o) => normStatus(o.status) === "ISSUED").length, [orders]);
-  const delivered = useMemo(() => orders.filter((o) => normStatus(o.status) === "DELIVERED").length, [orders]);
+
+  const pending = useMemo(() => {
+    return orders.filter((o) => normStatus(o.status) === "SUBMITTED").length;
+  }, [orders]);
+
+  const issued = useMemo(() => {
+    return orders.filter((o) => normStatus(o.status) === "ISSUED").length;
+  }, [orders]);
+
+  const delivered = useMemo(() => {
+    return orders.filter((o) => normStatus(o.status) === "DELIVERED").length;
+  }, [orders]);
+
+  /* =========================
+     Actions
+  ========================= */
 
   const onAction = async (fn: () => Promise<unknown>) => {
     setError("");
     setLoading(true);
+
     try {
       await fn();
       await fetchAll();
@@ -169,6 +223,10 @@ const getStoreName = (storeId: number) => {
       setLoading(false);
     }
   };
+
+  /* =========================
+     Detail modal
+  ========================= */
 
   const openOrderDetail = async (orderId: number) => {
     setOpenDetail(true);
@@ -209,41 +267,46 @@ const getStoreName = (storeId: number) => {
     setDetailError("");
     setDetailLoading(false);
   };
-  
-  
-const openRejectConfirm = (order: OrderRow) => {
-  setRejectingOrder(order);
-  setOpenRejectModal(true);
-};
 
-const closeRejectConfirm = () => {
-  if (rejectLoading) return;
-  setOpenRejectModal(false);
-  setRejectingOrder(null);
-};
+  /* =========================
+     Reject modal
+  ========================= */
 
-const confirmRejectOrder = async () => {
-  if (!rejectingOrder) return;
+  const openRejectConfirm = (order: OrderRow) => {
+    setRejectingOrder(order);
+    setOpenRejectModal(true);
+  };
 
-  setError("");
-  setRejectLoading(true);
-
-  try {
-    await orderApi.reject(rejectingOrder.id);
+  const closeRejectConfirm = () => {
+    if (rejectLoading) return;
     setOpenRejectModal(false);
     setRejectingOrder(null);
-    await fetchAll();
-  } catch (e: unknown) {
-    setError(getErrorMessage(e, "Reject order failed"));
-  } finally {
-    setRejectLoading(false);
-  }
-};
+  };
+
+  const confirmRejectOrder = async () => {
+    if (!rejectingOrder) return;
+
+    setError("");
+    setRejectLoading(true);
+
+    try {
+      await orderApi.reject(rejectingOrder.id);
+      setOpenRejectModal(false);
+      setRejectingOrder(null);
+      await fetchAll();
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Reject order failed"));
+    } finally {
+      setRejectLoading(false);
+    }
+  };
+
+  /* =========================
+     Render
+  ========================= */
 
   return (
     <div>
-      
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card
           title="Total Orders"
@@ -252,27 +315,30 @@ const confirmRejectOrder = async () => {
           borderColor="border-blue-500"
           icon={<ClipboardList className="w-7 h-7 text-blue-600" />}
         />
+
         <Card
-  title="Submitted"
-  value={pending}
-  subtext="Waiting for confirmation"
-  borderColor="border-yellow-500"
-  icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
-/>
+          title="Submitted"
+          value={pending}
+          subtext="Waiting for confirmation"
+          borderColor="border-yellow-500"
+          icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
+        />
+
         <Card
-  title="Issued"
-  value={issued}
-  subtext="Ready for delivery"
-  borderColor="border-orange-500"
-  icon={<Truck className="w-7 h-7 text-orange-600" />}
-/>
+          title="Issued"
+          value={issued}
+          subtext="Ready for delivery"
+          borderColor="border-orange-500"
+          icon={<Truck className="w-7 h-7 text-orange-600" />}
+        />
+
         <Card
-  title="Delivered"
-  value={delivered}
-  subtext="Completed orders"
-  borderColor="border-green-500"
-  icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
-/>
+          title="Delivered"
+          value={delivered}
+          subtext="Completed orders"
+          borderColor="border-green-500"
+          icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
+        />
       </div>
 
       <div className="bg-white/95 rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
@@ -301,11 +367,11 @@ const confirmRejectOrder = async () => {
               className="px-4 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
             >
               <option value="ALL">All Status</option>
-<option value="SUBMITTED">SUBMITTED</option>
-<option value="CONFIRMED">CONFIRMED</option>
-<option value="ISSUED">ISSUED</option>
-<option value="DELIVERED">DELIVERED</option>
-<option value="REJECTED">REJECTED</option>
+              <option value="SUBMITTED">SUBMITTED</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="ISSUED">ISSUED</option>
+              <option value="DELIVERED">DELIVERED</option>
+              <option value="REJECTED">REJECTED</option>
             </select>
           </div>
         </div>
@@ -319,64 +385,64 @@ const confirmRejectOrder = async () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-700">
               <tr>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Order Code</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Store</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Order Date</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Delivery Date</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">Actions</th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
-</tr>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Order Code</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Store</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Order Date</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Delivery Date</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Actions</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
+              </tr>
             </thead>
 
             <tbody>
               {filtered.map((o) => (
                 <tr key={o.id} className="border-t">
-  <td className="px-4 py-3 font-medium">{o.order_code}</td>
-  <td className="px-4 py-3">{getStoreName(o.store_id)}</td>
-  <td className="px-4 py-3">{formatDate(o.order_date)}</td>
-  <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
-  <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
-  <td className="px-4 py-3">{normStatus(o.status)}</td>
+                  <td className="px-4 py-3 font-medium">{o.order_code}</td>
+                  <td className="px-4 py-3">{getStoreName(o.store_id)}</td>
+                  <td className="px-4 py-3">{formatDate(o.order_date)}</td>
+                  <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
+                  <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
+                  <td className="px-4 py-3">{normStatus(o.status)}</td>
 
-                  
-  <td className="px-4 py-3">
-  <div className="flex flex-wrap gap-2">
-    {canConfirm(o.status) ? (
-      <button
-        disabled={loading}
-        onClick={() => onAction(() => orderApi.confirm(o.id))}
-        className="px-3 py-1.5 rounded-lg border border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
-      >
-        Confirm
-      </button>
-    ) : null}
-
-    {canReject(o.status) ? (
-      <button
-        disabled={loading || rejectLoading}
-        onClick={() => openRejectConfirm(o)}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700"
-      >
-        <XCircle className="w-4 h-4" />
-        Reject
-      </button>
-    ) : null}
-
-    {!canConfirm(o.status) && !canReject(o.status) ? (
-      <span className="text-xs text-gray-400">-</span>
-    ) : null}
-  </div>
-</td>
                   <td className="px-4 py-3">
-  <button
-    onClick={() => openOrderDetail(o.id)}
-    className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-  >
-    <Eye className="w-4 h-4 text-gray-600 hover:text-orange-500" />
-  </button>
-</td>
+                    <div className="flex flex-wrap gap-2">
+                      {canConfirm(o.status) ? (
+                        <button
+                          disabled={loading}
+                          onClick={() => onAction(() => orderApi.confirm(o.id))}
+                          className="px-3 py-1.5 rounded-lg border border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
+                        >
+                          Confirm
+                        </button>
+                      ) : null}
+
+                      {canReject(o.status) ? (
+                        <button
+                          disabled={loading || rejectLoading}
+                          onClick={() => openRejectConfirm(o)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Reject
+                        </button>
+                      ) : null}
+
+                      {!canConfirm(o.status) && !canReject(o.status) ? (
+                        <span className="text-xs text-gray-400">-</span>
+                      ) : null}
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => openOrderDetail(o.id)}
+                      className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                    >
+                      <Eye className="w-4 h-4 text-gray-600 hover:text-orange-500" />
+                    </button>
+                  </td>
                 </tr>
               ))}
 
@@ -423,30 +489,32 @@ const confirmRejectOrder = async () => {
 
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                     <div className="px-4 py-3 border-b font-semibold">Items</div>
+
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-gray-700">
                           <tr>
                             <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">SKU</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">SKU</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
                           </tr>
                         </thead>
+
                         <tbody>
                           {(Array.isArray(detail.items) ? detail.items : []).map((it) => (
                             <tr key={it.order_item_id} className="border-t">
-  <td className="px-4 py-3">
-    <div className="font-medium">{it.product_name}</div>
-  </td>
-  <td className="px-4 py-3">
-    {getProductSku(products, it.product_id)}
-  </td>
-  <td className="px-4 py-3">{toNumber(it.quantity)}</td>
-  <td className="px-4 py-3">{formatMoney(it.unit_price)}</td>
-  <td className="px-4 py-3">{formatMoney(it.total_price)}</td>
-</tr>
+                              <td className="px-4 py-3">
+                                <div className="font-medium">{it.product_name}</div>
+                              </td>
+                              <td className="px-4 py-3">
+                                {getProductSku(products, it.product_id)}
+                              </td>
+                              <td className="px-4 py-3">{toNumber(it.quantity)}</td>
+                              <td className="px-4 py-3">{formatMoney(it.unit_price)}</td>
+                              <td className="px-4 py-3">{formatMoney(it.total_price)}</td>
+                            </tr>
                           ))}
 
                           {!detail.items || detail.items.length === 0 ? (
@@ -466,7 +534,9 @@ const confirmRejectOrder = async () => {
           </div>
         </div>
       ) : null}
-            {openRejectModal ? (
+
+      {/* REJECT MODAL */}
+      {openRejectModal ? (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[60]">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">
@@ -490,12 +560,14 @@ const confirmRejectOrder = async () => {
                   <span className="text-gray-500">Order Code:</span>{" "}
                   <span className="font-semibold">{rejectingOrder?.order_code ?? "-"}</span>
                 </div>
+
                 <div>
                   <span className="text-gray-500">Store:</span>{" "}
                   <span className="font-semibold">
                     {rejectingOrder ? getStoreName(rejectingOrder.store_id) : "-"}
                   </span>
                 </div>
+
                 <div>
                   <span className="text-gray-500">Status:</span>{" "}
                   <span className="font-semibold">
@@ -528,6 +600,10 @@ const confirmRejectOrder = async () => {
     </div>
   );
 }
+
+/* =========================
+   Small Component
+========================= */
 
 function Info({ label, value }: { label: string; value: string }) {
   return (

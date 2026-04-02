@@ -79,7 +79,7 @@ export default function StaffInventoryTable(props: Props) {
                   <Th>category_name</Th>
                   <Th>Qty</Th>
                   <Th>Status</Th>
-                  <Th style={{ textAlign: "right" }}>Actions</Th>
+                  {/* <Th style={{ textAlign: "right" }}>Actions</Th> */}
                 </tr>
               </thead>
               <tbody>
@@ -111,26 +111,28 @@ export default function StaffInventoryTable(props: Props) {
                         {x.status}
                       </span>
                     </Td>
-                    <Td style={{ textAlign: "right" }}>
-                      <button
-                        style={{
-                          border: "1px solid #ddd",
-                          background: "#fff",
-                          borderRadius: 10,
-                          padding: "6px 10px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => alert("Edit: " + x.id)}
-                      >
-                        ✏️
-                      </button>
-                    </Td>
+                 {/*
+<Td style={{ textAlign: "right" }}>
+  <button
+    style={{
+      border: "1px solid #ddd",
+      background: "#fff",
+      borderRadius: 10,
+      padding: "6px 10px",
+      cursor: "pointer",
+    }}
+    onClick={() => alert("Edit: " + x.id)}
+  >
+    ✏️
+  </button>
+</Td>
+*/}
                   </tr>
                 ))}
 
                 {inventory.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: 16, opacity: 0.7 }}>
+                    <td colSpan={5} style={{ padding: 16, opacity: 0.7 }}>
                       No data
                     </td>
                   </tr>

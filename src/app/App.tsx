@@ -8,7 +8,7 @@ import Dashboard from "./admin/Dashboard/Dashboard";
 import Users from "./admin/Users/Users";
 // CK Staff (Central Kitchen Staff)
 import CKStaffLayout from "./staff/CKStaffLayout";
-import CKStaffDashboard from "./staff/CKStaffDashboard/CKStaffDashboard";
+//import CKStaffDashboard from "./staff/CKStaffDashboard/CKStaffDashboard";
 import CKStaffInventory from "./staff/CKStaffInventory/CKStaffInventory";
 import CKStaffOrder from "./staff/CKStaffOrder/CKStaffOrder";
 import CKStaffProfile from "./staff/CKStaffProfile/CKStaffProfile";
@@ -65,12 +65,12 @@ export default function App() {
       <Route path="users" element={<Users />} />
       <Route path="categories" element={<Category />} />
       <Route path="stores" element={<Store />} />
-      <Route index element={<Navigate to="dashboard" replace />} />
+      <Route index element={<Navigate to="inventory" replace />} />
     </Route>
 
     {/* CK STAFF */}
     <Route path="/ck-staff" element={<CKStaffLayout />}>
-      <Route path="dashboard" element={<CKStaffDashboard />} />
+      {/* <Route path="dashboard" element={<CKStaffDashboard />} /> */}
       <Route path="inventory" element={<CKStaffInventory />} />
       <Route path="material-inventory" element={<CKStaffMaterialInventory />} />
       <Route path="orders" element={<CKStaffOrder />} />

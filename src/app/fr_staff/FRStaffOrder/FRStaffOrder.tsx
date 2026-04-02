@@ -11,12 +11,18 @@ import {
   XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
 import Card from "../../../components/Card";
-import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import axiosClient from "../../../api/axiosClient";
+import orderApi, { type OrderRow, type OrderStatus } from "../../../api/orderApi";
 import productApi, { type ProductItem } from "../../../api/productApi";
 import { storeApi } from "../../../api/store.api";
 import type { Store } from "../../../types/store.type";
+
+/* =========================
+   TYPES
+========================= */
+
 type OrderItemRow = {
   order_item_id: number;
   product_id: number;
@@ -46,14 +52,22 @@ type CreateRow = {
   unit_price: number;
 };
 
+type ErrorShape = {
+  message?: string;
+  response?: { data?: { message?: string } };
+};
+
+/* =========================
+   HELPERS
+========================= */
+
 function toNumber(v: string | number | undefined) {
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) ? n : 0;
 }
 
 function formatMoney(v: string | number) {
-  const n = toNumber(v);
-  return n.toLocaleString("vi-VN");
+  return toNumber(v).toLocaleString("vi-VN");
 }
 
 function formatDate(iso: string | null | undefined) {
@@ -62,6 +76,20 @@ function formatDate(iso: string | null | undefined) {
   if (Number.isNaN(d.getTime())) return String(iso);
   return d.toLocaleDateString("vi-VN");
 }
+
+function normStatus(s: OrderStatus) {
+  return String(s || "").toUpperCase();
+}
+
+function canCancel(s: OrderStatus) {
+  return normStatus(s) === "SUBMITTED";
+}
+
+function getErrorMessage(e: unknown, fallback: string) {
+  const err = e as ErrorShape;
+  return err?.response?.data?.message || err?.message || fallback;
+}
+
 function getProductSku(products: ProductItem[], productId: number) {
   const found = products.find((p) => Number(p.id) === Number(productId));
   if (!found) return "-";
@@ -73,150 +101,162 @@ function getProductSku(products: ProductItem[], productId: number) {
   return sku ? String(sku) : "-";
 }
 
+/* =========================
+   SMALL UI
+========================= */
 
-// điều kiện để hiển thị nút Cancel: chỉ khi status là SUBMITTED thì mới được phép cancel
-function normStatus(s: OrderStatus) {
-  return String(s || "").toUpperCase();
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-sm font-semibold mt-1 break-words">{value}</div>
+    </div>
+  );
 }
 
-
-function canCancel(s: OrderStatus) {
-  return normStatus(s) === "SUBMITTED";
-}
-
-type ErrorShape = {
-  message?: string;
-  response?: { data?: { message?: string } };
-};
-
-function getErrorMessage(e: unknown, fallback: string) {
-  const err = e as ErrorShape;
-  return err?.response?.data?.message || err?.message || fallback;
-}
+/* =========================
+   PAGE
+========================= */
 
 export default function FRStaffOrder() {
-  // Create form
+  /* =========================
+     STATE
+  ========================= */
+
+  // master data
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+
+  // list
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
+
+  // create
+  const [openCreate, setOpenCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [createDeliveryDate, setCreateDeliveryDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return d.toISOString().slice(0, 10);
   });
   const [createRows, setCreateRows] = useState<CreateRow[]>([
-  { product_id: "", quantity: 1, unit_price: 0 },
-]);
-  const [creating, setCreating] = useState(false);
+    { product_id: "", quantity: 1, unit_price: 0 },
+  ]);
 
-  // List
- const [loading, setLoading] = useState(true);
-const [refreshing, setRefreshing] = useState(false);
-const [error, setError] = useState("");
-const [orders, setOrders] = useState<OrderRow[]>([]);
-const [stores, setStores] = useState<Store[]>([]);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
-
-  // Create modal
-  const [openCreate, setOpenCreate] = useState(false);
-
-  // Detail modal
+  // detail
   const [openDetail, setOpenDetail] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>({});
 
-  const [detailCache, setDetailCache] = useState<Record<number, OrderDetail>>(
-    {}
-  );
-
+  // cancel
   const [openCancelModal, setOpenCancelModal] = useState(false);
-const [cancelingOrder, setCancelingOrder] = useState<OrderRow | null>(null);
-const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelingOrder, setCancelingOrder] = useState<OrderRow | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  
 
   const fetchAll = useCallback(async (showRefreshing = false) => {
-  setError("");
+    setError("");
 
-  if (showRefreshing) {
-    setRefreshing(true);
-  } else {
-    setLoading(true);
-  }
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
 
-  try {
-    const o = await orderApi.getAll();
-    setOrders(Array.isArray(o?.data) ? o.data : []);
-  } catch (e: unknown) {
-    setError(getErrorMessage(e, "Load orders failed"));
-    setOrders([]);
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-}, []);
+    try {
+      const res = await orderApi.getAll();
+      setOrders(Array.isArray(res?.data) ? res.data : []);
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Load orders failed"));
+      setOrders([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-const fetchProducts = useCallback(async () => {
-  try {
-    const res = await productApi.getAll();
-    setProducts(Array.isArray(res?.data) ? res.data : []);
-  } catch (e) {
-    console.error(e);
-    setProducts([]);
-  }
-}, []);
-const fetchStores = useCallback(async () => {
-  try {
-    const res = await storeApi.getAll();
-    const data = Array.isArray(res?.data?.data) ? res.data.data : [];
-    setStores(data);
-  } catch (e) {
-    console.error(e);
-    setStores([]);
-  }
-}, []);
+  const fetchProducts = useCallback(async () => {
+    try {
+      const res = await productApi.getAll();
+      setProducts(Array.isArray(res?.data) ? res.data : []);
+    } catch (e) {
+      console.error(e);
+      setProducts([]);
+    }
+  }, []);
 
-useEffect(() => {
-  const init = async () => {
-    await Promise.all([fetchAll(false), fetchProducts(), fetchStores()]);
-  };
+  const fetchStores = useCallback(async () => {
+    try {
+      const res = await storeApi.getAll();
+      const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+      setStores(data);
+    } catch (e) {
+      console.error(e);
+      setStores([]);
+    }
+  }, []);
 
-  void init();
-}, [fetchAll, fetchProducts, fetchStores]);
+  useEffect(() => {
+    const init = async () => {
+      await Promise.all([fetchAll(false), fetchProducts(), fetchStores()]);
+    };
 
-  const filtered = useMemo(() => {
-  const q = (search || "").trim().toLowerCase();
-  return orders.filter((o) => {
-    const matchSearch =
-      !q || String(o.order_code || "").toLowerCase().includes(q);
-    const matchStatus =
-      statusFilter === "ALL"
-        ? true
-        : normStatus(o.status) === normStatus(statusFilter);
-    return matchSearch && matchStatus;
-  });
-}, [orders, search, statusFilter]);
+    void init();
+  }, [fetchAll, fetchProducts, fetchStores]);
 
-const storeMap = useMemo(() => {
-  return new Map<number, string>(
-    stores.map((s) => [Number(s.id), String(s.name)])
+  /* =========================
+     MEMO
+  ========================= */
+
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return orders.filter((o) => {
+      const matchSearch =
+        !q || String(o.order_code || "").toLowerCase().includes(q);
+
+      const matchStatus =
+        statusFilter === "ALL"
+          ? true
+          : normStatus(o.status) === normStatus(statusFilter);
+
+      return matchSearch && matchStatus;
+    });
+  }, [orders, search, statusFilter]);
+
+  const storeMap = useMemo(() => {
+    return new Map<number, string>(
+      stores.map((s) => [Number(s.id), String(s.name)])
+    );
+  }, [stores]);
+
+  const totalOrders = orders.length;
+
+  const submittedCount = useMemo(
+    () => orders.filter((o) => normStatus(o.status) === "SUBMITTED").length,
+    [orders]
   );
-}, [stores]);
 
-  const total = orders.length;
+  const issuedCount = useMemo(
+    () => orders.filter((o) => normStatus(o.status) === "ISSUED").length,
+    [orders]
+  );
 
-const submitted = useMemo(
-  () => orders.filter((o) => normStatus(o.status) === "SUBMITTED").length,
-  [orders]
-);
+  const deliveredCount = useMemo(
+    () => orders.filter((o) => normStatus(o.status) === "DELIVERED").length,
+    [orders]
+  );
 
-const issued = useMemo(
-  () => orders.filter((o) => normStatus(o.status) === "ISSUED").length,
-  [orders]
-);
-
-const delivered = useMemo(
-  () => orders.filter((o) => normStatus(o.status) === "DELIVERED").length,
-  [orders]
-);
+  /* =========================
+     DETAIL ACTIONS
+  ========================= */
 
   const openOrderDetail = async (orderId: number) => {
     setOpenDetail(true);
@@ -233,14 +273,12 @@ const delivered = useMemo(
     setDetailLoading(true);
 
     try {
-      const res = await axiosClient.get<{ data: OrderDetail }>(
-        `/orders/${orderId}`
-      );
-      const d = (res.data as { data?: OrderDetail }).data ?? null;
+      const res = await axiosClient.get<{ data: OrderDetail }>(`/orders/${orderId}`);
+      const data = (res.data as { data?: OrderDetail }).data ?? null;
 
-      if (d && typeof d?.id === "number") {
-        setDetail(d);
-        setDetailCache((prev) => ({ ...prev, [orderId]: d }));
+      if (data && typeof data.id === "number") {
+        setDetail(data);
+        setDetailCache((prev) => ({ ...prev, [orderId]: data }));
       } else {
         setDetail(null);
         setDetailError("Order detail response is invalid");
@@ -260,47 +298,50 @@ const delivered = useMemo(
     setDetailLoading(false);
   };
 
-  // const createTotal = useMemo(() => {
-  //   return createRows.reduce(
-  //     (sum, r) => sum + toNumber(r.quantity) * toNumber(r.unit_price),
-  //     0
-  //   );
-  // }, [createRows]);
-const openCancelConfirm = (order: OrderRow) => {
-  setCancelingOrder(order);
-  setOpenCancelModal(true);
-};
+  /* =========================
+     CANCEL ACTIONS
+  ========================= */
 
-const closeCancelConfirm = () => {
-  if (cancelLoading) return;
-  setOpenCancelModal(false);
-  setCancelingOrder(null);
-};
-//api canvle
-const confirmCancelOrder = async () => {
-  if (!cancelingOrder) return;
+  const openCancelConfirm = (order: OrderRow) => {
+    setCancelingOrder(order);
+    setOpenCancelModal(true);
+  };
 
-  setError("");
-  setCancelLoading(true);
-
-  try {
-    await orderApi.cancel(cancelingOrder.id);
-    toast.success("Order cancelled successfully");
+  const closeCancelConfirm = () => {
+    if (cancelLoading) return;
     setOpenCancelModal(false);
-    setCancelingOrder(null);//xóa order đang chọn
-    await fetchAll(true);//gọi lại list order để load dữ liệu mới
-  } catch (e: unknown) {
-    toast.error(getErrorMessage(e, "Cancel order failed"));
-  } finally {
-    setCancelLoading(false);
-  }
-};
+    setCancelingOrder(null);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancelingOrder) return;
+
+    setError("");
+    setCancelLoading(true);
+
+    try {
+      await orderApi.cancel(cancelingOrder.id);
+      toast.success("Order cancelled successfully");
+      setOpenCancelModal(false);
+      setCancelingOrder(null);
+      await fetchAll(true);
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Cancel order failed"));
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  /* =========================
+     CREATE ACTIONS
+  ========================= */
+
   const addRow = () => {
-  setCreateRows((prev) => [
-    ...prev,
-    { product_id: "", quantity: 1, unit_price: 0 },
-  ]);
-};
+    setCreateRows((prev) => [
+      ...prev,
+      { product_id: "", quantity: 1, unit_price: 0 },
+    ]);
+  };
 
   const removeRow = (idx: number) => {
     setCreateRows((prev) => prev.filter((_, i) => i !== idx));
@@ -308,40 +349,49 @@ const confirmCancelOrder = async () => {
 
   const setRow = (idx: number, patch: Partial<CreateRow>) => {
     setCreateRows((prev) =>
-      prev.map((r, i) => (i === idx ? { ...r, ...patch } : r))
+      prev.map((row, i) => (i === idx ? { ...row, ...patch } : row))
     );
   };
-  // khi chọn product thì tự động điền unit price dựa trên product đã chọn
+
   const getProductUnitPrice = (productId: number): number => {
-  const product = products.find((p) => Number(p.id) === Number(productId));
-  if (!product) return 0;
+    const product = products.find((p) => Number(p.id) === Number(productId));
+    if (!product) return 0;
 
-  const raw =
-    (product as ProductItem & { unit_price?: number | string }).unit_price ?? 0;
+    const raw =
+      (product as ProductItem & { unit_price?: number | string }).unit_price ?? 0;
 
-  return toNumber(raw);
-};
+    return toNumber(raw);
+  };
+
+  const resetCreateForm = () => {
+    setCreateRows([{ product_id: "", quantity: 1, unit_price: 0 }]);
+  };
 
   const submitCreate = async () => {
-    const delivery_date = (createDeliveryDate || "").trim();
+    const delivery_date = createDeliveryDate.trim();
+
     if (!delivery_date) {
       toast.error("Please select delivery date");
       return;
     }
 
     const items = createRows
-  .map((r) => ({
-    product_id:
-      typeof r.product_id === "string" ? Number(r.product_id) : r.product_id,
-    quantity:
-      typeof r.quantity === "string" ? Number(r.quantity) : r.quantity,
-    unit_price: r.unit_price,
-  }))
-      .filter((r) => Number.isFinite(r.product_id) && r.product_id > 0)// chỉ lấy những row có chọn product
-      .map((r) => ({
-        product_id: Number(r.product_id),
-        quantity: Math.max(1, Number(r.quantity) || 1),
-        unit_price: Math.max(0, Number(r.unit_price) || 0),
+      .map((row) => ({
+        product_id:
+          typeof row.product_id === "string"
+            ? Number(row.product_id)
+            : row.product_id,
+        quantity:
+          typeof row.quantity === "string"
+            ? Number(row.quantity)
+            : row.quantity,
+        unit_price: row.unit_price,
+      }))
+      .filter((row) => Number.isFinite(row.product_id) && row.product_id > 0)
+      .map((row) => ({
+        product_id: Number(row.product_id),
+        quantity: Math.max(1, Number(row.quantity) || 1),
+        unit_price: Math.max(0, Number(row.unit_price) || 0),
       }));
 
     if (items.length === 0) {
@@ -350,12 +400,13 @@ const confirmCancelOrder = async () => {
     }
 
     setCreating(true);
+
     try {
-     await orderApi.create({ delivery_date, items });
-toast.success("Order created successfully");
-setCreateRows([{ product_id: "", quantity: 1, unit_price: 0 }]);
-setOpenCreate(false);
-await fetchAll(true);
+      await orderApi.create({ delivery_date, items });
+      toast.success("Order created successfully");
+      resetCreateForm();
+      setOpenCreate(false);
+      await fetchAll(true);
     } catch (e: unknown) {
       toast.error(getErrorMessage(e, "Create order failed"));
     } finally {
@@ -363,48 +414,49 @@ await fetchAll(true);
     }
   };
 
+  /* =========================
+     RENDER
+  ========================= */
+
   return (
     <div>
-      
-      
-
       {/* STATS */}
-     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-  <Card
-    title="Total Orders"
-    value={total}
-    subtext="All orders"
-    borderColor="border-blue-500"
-    icon={<ClipboardList className="w-7 h-7 text-blue-600" />}
-  />
-  <Card
-    title="Submitted"
-    value={submitted}
-    subtext="Waiting for confirmation"
-    borderColor="border-yellow-500"
-    icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
-  />
-  <Card
-    title="Issued"
-    value={issued}
-    subtext="Ready for delivery"
-    borderColor="border-orange-500"
-    icon={<Truck className="w-7 h-7 text-orange-600" />}
-  />
-  <Card
-    title="Delivered"
-    value={delivered}
-    subtext="Completed orders"
-    borderColor="border-green-500"
-    icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
-  />
-</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <Card
+          title="Total Orders"
+          value={totalOrders}
+          subtext="All orders"
+          borderColor="border-blue-500"
+          icon={<ClipboardList className="w-7 h-7 text-blue-600" />}
+        />
+        <Card
+          title="Submitted"
+          value={submittedCount}
+          subtext="Waiting for confirmation"
+          borderColor="border-yellow-500"
+          icon={<Hourglass className="w-7 h-7 text-yellow-600" />}
+        />
+        <Card
+          title="Issued"
+          value={issuedCount}
+          subtext="Ready for delivery"
+          borderColor="border-orange-500"
+          icon={<Truck className="w-7 h-7 text-orange-600" />}
+        />
+        <Card
+          title="Delivered"
+          value={deliveredCount}
+          subtext="Completed orders"
+          borderColor="border-green-500"
+          icon={<CheckCircle2 className="w-7 h-7 text-green-600" />}
+        />
+      </div>
 
+      {/* HEADER / FILTER */}
       <div className="bg-white/95 rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
           <div className="text-lg font-semibold">Orders List</div>
 
-          {/* BUTTONS: Create nằm bên trái Refresh */}
           <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <button
               type="button"
@@ -416,13 +468,13 @@ await fetchAll(true);
             </button>
 
             <button
-  onClick={() => fetchAll(true)}
-  disabled={refreshing}
-  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
->
-  <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-  {refreshing ? "Refreshing..." : "Refresh"}
-</button>
+              onClick={() => fetchAll(true)}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
 
             <input
               value={search}
@@ -450,67 +502,55 @@ await fetchAll(true);
         {error ? <div className="mt-3 text-red-600">{error}</div> : null}
       </div>
 
+      {/* LIST TABLE */}
       <div className="bg-white/95 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-700">
               <tr>
-            
-                <th className="text-left px-4 py-3 whitespace-nowrap">
-                  Order Code
-                </th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Order Code</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Store</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">
-                  Order Date
-                </th>
-                <th className="text-left px-4 py-3 whitespace-nowrap">
-                  Delivery Date
-                </th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Order Date</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Delivery Date</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Status</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap">Actions</th>
-                
                 <th className="text-left px-4 py-3 whitespace-nowrap">View</th>
               </tr>
             </thead>
 
             <tbody>
-              {filtered.map((o) => (
-                <tr key={o.id} className="border-t">
-                  
-                  <td className="px-4 py-3 font-medium">{o.order_code}</td>
+              {filteredOrders.map((order) => (
+                <tr key={order.id} className="border-t">
+                  <td className="px-4 py-3 font-medium">{order.order_code}</td>
+                  <td className="px-4 py-3">
+                    {storeMap.get(Number(order.store_id)) || "-"}
+                  </td>
+                  <td className="px-4 py-3">{formatDate(order.order_date)}</td>
+                  <td className="px-4 py-3">{formatDate(order.delivery_date)}</td>
+                  <td className="px-4 py-3">{formatMoney(order.total_amount)}</td>
+                  <td className="px-4 py-3">{normStatus(order.status)}</td>
 
                   <td className="px-4 py-3">
-                  
-  {storeMap.get(Number(o.store_id)) || "-"}
-</td>
-                  <td className="px-4 py-3">{formatDate(o.order_date)}</td>
-                  <td className="px-4 py-3">{formatDate(o.delivery_date)}</td>
-                  <td className="px-4 py-3">{formatMoney(o.total_amount)}</td>
-                  <td className="px-4 py-3">{normStatus(o.status)}</td>
-                  <td className="px-4 py-3">
-  <div className="flex flex-wrap gap-2">
-    {canCancel(o.status) ? (
-  // chỉ khi status là SUBMITTED thì mới được phép cancel
-  <button
-        disabled={loading || refreshing || cancelLoading} 
-        onClick={() => openCancelConfirm(o)}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-60"
-      >
-        <XCircle className="w-4 h-4" />
-        Cancel
-      </button>
-    ) : (
-      <span className="text-xs text-gray-400">-</span>
-    )}
-  </div>
-</td>
-
-                  
+                    <div className="flex flex-wrap gap-2">
+                      {canCancel(order.status) ? (
+                        <button
+                          disabled={loading || refreshing || cancelLoading}
+                          onClick={() => openCancelConfirm(order)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-60"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </div>
+                  </td>
 
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => openOrderDetail(o.id)}
+                      onClick={() => openOrderDetail(order.id)}
                       className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
                     >
                       <Eye className="w-4 h-4 text-gray-600 hover:text-orange-500" />
@@ -519,7 +559,7 @@ await fetchAll(true);
                 </tr>
               ))}
 
-              {!loading && filtered.length === 0 ? (
+              {!loading && filteredOrders.length === 0 ? (
                 <tr className="border-t">
                   <td className="px-4 py-6 text-gray-500" colSpan={8}>
                     No orders
@@ -531,12 +571,10 @@ await fetchAll(true);
         </div>
       </div>
 
-      
-         {/* CREATE ORDER MODAL */}
+      {/* CREATE MODAL */}
       {openCreate ? (
         <div className="fixed top-0 right-0 bottom-0 left-0 md:left-[260px] bg-black/40 flex items-center justify-center p-4 z-[9999]">
           <div className="w-full max-w-5xl bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col max-h-[85vh]">
-            {/* HEADER */}
             <div className="p-4 border-b flex items-center justify-between">
               <div>
                 <div className="font-semibold text-lg">Create Order</div>
@@ -552,9 +590,7 @@ await fetchAll(true);
               </button>
             </div>
 
-            {/* BODY (scroll) */}
             <div className="p-4 flex-1 overflow-y-auto">
-              {/* Delivery date */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-gray-600">Delivery date</label>
@@ -573,48 +609,44 @@ await fetchAll(true);
                 ) : null}
               </div>
 
-              {/* Items table */}
               <div className="border border-gray-100 rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b bg-gray-50 font-semibold">
-                  Items
-                </div>
+                <div className="px-4 py-3 border-b bg-gray-50 font-semibold">Items</div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm table-fixed">
                     <thead className="bg-white text-gray-700">
                       <tr className="border-b">
                         <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
-
-<th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">Line Total</th>
-<th className="text-left px-4 py-3 whitespace-nowrap">Remove</th>
-
-
+                        <th className="text-left px-4 py-3 whitespace-nowrap">Qty</th>
+                        <th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
+                        <th className="text-left px-4 py-3 whitespace-nowrap">Line Total</th>
+                        <th className="text-left px-4 py-3 whitespace-nowrap">Remove</th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      {createRows.map((r, idx) => {
-  const lineTotal = toNumber(r.quantity) * toNumber(r.unit_price);
+                      {createRows.map((row, idx) => {
+                        const lineTotal = toNumber(row.quantity) * toNumber(row.unit_price);
 
-  return (
+                        return (
                           <tr key={idx} className="border-t">
                             <td className="px-4 py-3 min-w-[280px]">
                               <select
-  value={r.product_id}
-  onChange={(e) => {
-    const productId = e.target.value ? Number(e.target.value) : "";
-    const unitPrice =
-      typeof productId === "number" ? getProductUnitPrice(productId) : 0;
+                                value={row.product_id}
+                                onChange={(e) => {
+                                  const productId = e.target.value ? Number(e.target.value) : "";
+                                  const unitPrice =
+                                    typeof productId === "number"
+                                      ? getProductUnitPrice(productId)
+                                      : 0;
 
-    setRow(idx, {
-      product_id: productId,
-      unit_price: unitPrice,
-    });
-  }}
-  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
->
+                                  setRow(idx, {
+                                    product_id: productId,
+                                    unit_price: unitPrice,
+                                  });
+                                }}
+                                className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-orange-200"
+                              >
                                 <option value="">Select product...</option>
                                 {products.map((p) => (
                                   <option key={p.id} value={p.id}>
@@ -624,13 +656,11 @@ await fetchAll(true);
                               </select>
                             </td>
 
-
-
-                            <td className="px-4 py-3 w-[140px]"> 
+                            <td className="px-4 py-3 w-[140px]">
                               <input
                                 type="number"
                                 min={1}
-                                value={r.quantity}
+                                value={row.quantity}
                                 onChange={(e) =>
                                   setRow(idx, {
                                     quantity: e.target.value === "" ? "" : Number(e.target.value),
@@ -640,17 +670,15 @@ await fetchAll(true);
                               />
                             </td>
 
-
                             <td className="px-4 py-3 w-[180px]">
-  <div className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-700">
-    {r.product_id === "" ? "-" : formatMoney(r.unit_price)}
-  </div>
-</td>
-
+                              <div className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-700">
+                                {row.product_id === "" ? "-" : formatMoney(row.unit_price)}
+                              </div>
+                            </td>
 
                             <td className="px-4 py-3 whitespace-nowrap font-semibold text-gray-900">
-  {r.product_id === "" ? "-" : formatMoney(lineTotal)}
-</td>
+                              {row.product_id === "" ? "-" : formatMoney(lineTotal)}
+                            </td>
 
                             <td className="px-4 py-3">
                               <button
@@ -677,10 +705,8 @@ await fetchAll(true);
               </div>
             </div>
 
-            {/* FOOTER (fixed bottom) */}
             <div className="p-4 border-t bg-white">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                {/* Left: Add */}
                 <button
                   type="button"
                   onClick={addRow}
@@ -690,15 +716,6 @@ await fetchAll(true);
                   Add item
                 </button>
 
-                {/* Middle/Right: Total */}
-                {/* <div className="flex items-center justify-between sm:justify-end gap-3">
-                  <div className="text-sm text-gray-600">Total</div>
-                  <div className="text-xl font-bold text-orange-600">
-                    {formatMoney(createTotal)}
-                  </div>
-                </div> */}
-
-                {/* Right: Actions */}
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
                   <button
                     type="button"
@@ -721,14 +738,12 @@ await fetchAll(true);
                   </button>
                 </div>
               </div>
-
-              {/* <div className="mt-2 text-xs text-gray-400">
-                Tip: Total = sum(qty × unit price)
-              </div> */}
             </div>
           </div>
         </div>
       ) : null}
+
+      {/* CANCEL MODAL */}
       {openCancelModal ? (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[60]">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -790,6 +805,7 @@ await fetchAll(true);
           </div>
         </div>
       ) : null}
+
       {/* DETAIL MODAL */}
       {openDetail ? (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
@@ -805,78 +821,52 @@ await fetchAll(true);
             </div>
 
             <div className="p-4 space-y-4">
-              {detailLoading ? (
-                <div className="text-gray-500">Loading...</div>
-              ) : null}
-              {detailError ? (
-                <div className="text-red-600">{detailError}</div>
-              ) : null}
+              {detailLoading ? <div className="text-gray-500">Loading...</div> : null}
+              {detailError ? <div className="text-red-600">{detailError}</div> : null}
 
               {detail ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <Info label="Order Code" value={detail.order_code} />
                     <Info
-  label="Store"
-  value={storeMap.get(Number(detail.store_id)) || String(detail.store_id)}
-/>
+                      label="Store"
+                      value={storeMap.get(Number(detail.store_id)) || String(detail.store_id)}
+                    />
                     <Info label="Status" value={normStatus(detail.status)} />
-                    <Info
-                      label="Total Amount"
-                      value={formatMoney(detail.total_amount)}
-                    />
+                    <Info label="Total Amount" value={formatMoney(detail.total_amount)} />
                     <Info label="Order Date" value={formatDate(detail.order_date)} />
-                    <Info
-                      label="Delivery Date"
-                      value={formatDate(detail.delivery_date)}
-                    />
+                    <Info label="Delivery Date" value={formatDate(detail.delivery_date)} />
                   </div>
 
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                     <div className="px-4 py-3 border-b font-semibold">Items</div>
+
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-gray-700">
                           <tr>
-  <th className="text-left px-4 py-3 whitespace-nowrap">
-    Product
-  </th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">
-    SKU
-  </th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">
-    Quantity
-  </th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">
-    Unit Price
-  </th>
-  <th className="text-left px-4 py-3 whitespace-nowrap">
-    Total
-  </th>
-</tr>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Product</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">SKU</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Quantity</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Unit Price</th>
+                            <th className="text-left px-4 py-3 whitespace-nowrap">Total</th>
+                          </tr>
                         </thead>
+
                         <tbody>
-                          {(Array.isArray(detail.items) ? detail.items : []).map(
-                            (it) => (
-                              <tr key={it.order_item_id} className="border-t">
-  <td className="px-4 py-3">
-    <div className="font-medium">{it.product_name}</div>
-  </td>
-  <td className="px-4 py-3">
-    {getProductSku(products, it.product_id)}
-  </td>
-  <td className="px-4 py-3">
-    {toNumber(it.quantity)}
-  </td>
-  <td className="px-4 py-3">
-    {formatMoney(it.unit_price)}
-  </td>
-  <td className="px-4 py-3">
-    {formatMoney(it.total_price)}
-  </td>
-</tr>
-                            )
-                          )}
+                          {(Array.isArray(detail.items) ? detail.items : []).map((item) => (
+                            <tr key={item.order_item_id} className="border-t">
+                              <td className="px-4 py-3">
+                                <div className="font-medium">{item.product_name}</div>
+                              </td>
+                              <td className="px-4 py-3">
+                                {getProductSku(products, item.product_id)}
+                              </td>
+                              <td className="px-4 py-3">{toNumber(item.quantity)}</td>
+                              <td className="px-4 py-3">{formatMoney(item.unit_price)}</td>
+                              <td className="px-4 py-3">{formatMoney(item.total_price)}</td>
+                            </tr>
+                          ))}
 
                           {!detail.items || detail.items.length === 0 ? (
                             <tr className="border-t">
@@ -895,15 +885,6 @@ await fetchAll(true);
           </div>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-sm font-semibold mt-1 break-words">{value}</div>
     </div>
   );
 }

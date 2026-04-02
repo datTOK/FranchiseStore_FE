@@ -20,12 +20,12 @@ function LoginPage() {
     } else if (normalizedRole === 'FR_STAFF') {
       navigate('/fr-staff/dashboard')
     } else if (normalizedRole === 'CK_STAFF') {
-      navigate('/ck-staff/dashboard')
+      navigate('/ck-staff/inventory')
     } else if (normalizedRole === 'MANAGER') {
       navigate('/manager/category')
     } else {
       console.warn('Unknown or missing role, defaulting to staff dashboard:', role)
-      navigate('/ck-staff/dashboard')
+      navigate('/ck-staff/inventory')
     }
   }
 

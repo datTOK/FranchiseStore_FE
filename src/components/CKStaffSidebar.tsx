@@ -6,7 +6,7 @@ import { NavLink } from "react-router-dom";
 import { doLogout } from "../app/auth/logout";
 
 const menu = [
-  { label: "Dashboard", path: "/ck-staff/dashboard", icon: LayoutDashboard },
+  //{ label: "Dashboard", path: "/ck-staff/dashboard", icon: LayoutDashboard },
   { label: "Inventory Product", path: "/ck-staff/inventory", icon: CirclePile },
   { label: "Inventory Material", path: "/ck-staff/material-inventory", icon: Boxes },
   { label: "Orders", path: "/ck-staff/orders", icon: NotepadText },
